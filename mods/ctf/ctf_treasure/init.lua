@@ -20,7 +20,7 @@ function ctf_treasure.get_default_treasures()
 		{"shooter:shotgun",0.04,2,1},
 
 		{"grenades_basic:regular",0.1,2,1},
-		{"grenades_basic:flashbang",0.1,2,1},
+		-- {"grenades_basic:flashbang",0.1,2,1},
 		{"grenades_basic:smoke",0.1,2,1},
 
 		{"shooter:machine_gun",0.02,2,1},
