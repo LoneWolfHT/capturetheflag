@@ -44,20 +44,22 @@ function grenades.register_grenade(name, def)
 			-- Collision Check
 
 			if not vector.equals(self.last_vel, vel) and vector.distance(self.last_vel, vel) > 4 then
+				local temppos = pos
 				if math.abs(self.last_vel.z) - 5 > math.abs(vel.z) then
-					self.last_vel.z = self.last_vel.z * -0.5
+					temppos.z = temppos.z + (-.1*(self.last_vel.z/math.abs(self.last_vel.z)))
+					vel.z = self.last_vel.z * -0.5
 				end
 
 				if math.abs(self.last_vel.x) - 5 > math.abs(vel.x) then
-					self.last_vel.x = self.last_vel.x * -0.5
+					temppos.x = temppos.x + (-.1*(self.last_vel.x/math.abs(self.last_vel.x)))
+					vel.x = self.last_vel.x * -0.5
 				end
 
 				if math.abs(self.last_vel.y) - 5 > math.abs(vel.y) then
-					self.last_vel.y = self.last_vel.y * -0.3
+					temppos.y = temppos.y + (-.1*(self.last_vel.y/math.abs(self.last_vel.y)))
+					vel.y = self.last_vel.y * -0.3
 				end
-
-				obj:set_velocity(self.last_vel)
-				vel = obj:get_velocity()
+				obj:set_pos(temppos)
 			end
 
 			-- Can't use set_acceleration() because the grenade will shoot backwards once the velocity reaches 0
