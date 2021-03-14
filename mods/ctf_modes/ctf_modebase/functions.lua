@@ -1,5 +1,3 @@
-ctf_gui.init()
-
 local choices = {}
 function ctf_modebase.start_new_match(show_form)
 	if show_form then
@@ -27,7 +25,7 @@ function ctf_modebase.start_new_match(show_form)
 		local mode_def = ctf_modebase.modes[most.n]
 
 		if mode_def.map_whitelist then
-			local map = ctf_modebase.place_map(mode_def.map_whitelist[math.random(1, #mode_def.map_whitelist)])
+			local map = ctf_modebase.place_map(most.n)
 
 			ctf_teams.allocate_teams(map.teams)
 		end
@@ -45,7 +43,7 @@ function ctf_modebase.show_modechoose_form(player)
 			type = "button",
 			label = HumanReadable(modename),
 			exit = true,
-			pos = {((ctf_gui.FORM_SIZE[1] - ctf_gui.ELEM_SIZE[1]) - ctf_gui.SCROLLBAR_WIDTH)/2, idx},
+			pos = {"center", idx},
 			func = function(playername, fields, field_name)
 				choices[playername] = modename
 			end,
@@ -61,7 +59,11 @@ function ctf_modebase.show_modechoose_form(player)
 	})
 end
 
-function ctf_modebase.place_map(mapidx)
+function ctf_modebase.place_map(mode_def, mapidx)
+	if not mapidx and mode_def.map_whitelist then
+		mapidx = mode_def.map_whitelist[math.random(1, #mode_def.map_whitelist)]
+	end
+
 	local dirlist = minetest.get_dir_list(ctf_map.maps_dir, true)
 
 	if not mapidx then
