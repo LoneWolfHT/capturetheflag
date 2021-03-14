@@ -1,4 +1,6 @@
 local choices = {}
+ctf_modebase.current_mode = "classic" -- Default mode
+
 function ctf_modebase.start_new_match(show_form)
 	if show_form then
 		for _, player in pairs(minetest.get_connected_players()) do
@@ -21,6 +23,8 @@ function ctf_modebase.start_new_match(show_form)
 		if not most.n then
 			most.n = ctf_modebase.modelist[math.random(1, #ctf_modebase.modelist)]
 		end
+
+		ctf_modebase.current_mode = most.n
 
 		local mode_def = ctf_modebase.modes[most.n]
 
@@ -74,6 +78,10 @@ function ctf_modebase.place_map(mode_def, mapidx)
 
 	local map = ctf_map.place_map(mapidx, dirlist[mapidx])
 
+	minetest.set_timeofday(0.4)
+
+	ctf_teams.allocate_teams(map.teams)
+
 	ctf_map.announce_map(map)
 
 	return map
@@ -83,3 +91,4 @@ function ctf_modebase.register_mode(name, def)
 	ctf_modebase.modes[name] = def
 	table.insert(ctf_modebase.modelist, name)
 end
+
