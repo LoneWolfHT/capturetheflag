@@ -78,7 +78,7 @@ function ctf_modebase.place_map(mode_def, mapidx)
 
 	local map = ctf_map.place_map(mapidx, dirlist[mapidx])
 
-	minetest.set_timeofday(0.4)
+	minetest.set_timeofday(map.start_time/2400 or ctf_map.DEFAULT_START_TIME)
 
 	ctf_teams.allocate_teams(map.teams)
 
