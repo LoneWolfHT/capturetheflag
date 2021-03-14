@@ -3,7 +3,7 @@ minetest.register_privilege("ctf_admin", {
 })
 
 minetest.register_chatcommand("ctf_next", {
-	description = "Skip to next match, or a specified map.",
+	description = "Skip to a new match.",
 	privs = {ctf_admin = true},
 
 	func = function()
