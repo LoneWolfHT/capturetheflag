@@ -78,7 +78,27 @@ function ctf_modebase.place_map(mode_def, mapidx)
 
 	local map = ctf_map.place_map(mapidx, dirlist[mapidx])
 
+	-- Set everything from map meta for players
+
 	minetest.set_timeofday(map.start_time/2400 or ctf_map.DEFAULT_START_TIME)
+	for _, player in pairs(minetest.get_connected_players()) do
+		local name = PlayerName(player)
+		local pinv = player:get_inventory()
+		for _, item in pairs(map.initial_stuff) do
+			pinv:add_item("main", ItemStack(item))
+		end
+		if map.skybox == "none" or nil then skybox.set(player, 0)
+		else skybox.set(player, map.skybox)
+		end
+		physics.set(name, "ctf_modebase:initialization", {
+			speed = map.phys_speed,
+			jump = map.phys_jump,
+			gravity = map.phys_gravity,
+		})
+		-- TODO: time_speed
+	end
+
+	-- finish
 
 	ctf_teams.allocate_teams(map.teams)
 
@@ -91,4 +111,3 @@ function ctf_modebase.register_mode(name, def)
 	ctf_modebase.modes[name] = def
 	table.insert(ctf_modebase.modelist, name)
 end
-
