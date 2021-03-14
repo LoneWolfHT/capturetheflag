@@ -84,8 +84,10 @@ function ctf_modebase.place_map(mode_def, mapidx)
 	for _, player in pairs(minetest.get_connected_players()) do
 		local name = PlayerName(player)
 		local pinv = player:get_inventory()
-		for _, item in pairs(map.initial_stuff) do
-			pinv:add_item("main", ItemStack(item))
+		if map.initial_stuff ~= nil then
+			for _, item in pairs(map.initial_stuff) do
+				pinv:add_item("main", ItemStack(item))
+			end
 		end
 		if map.skybox == "none" or nil then skybox.set(player, 0)
 		else skybox.set(player, map.skybox)
