@@ -1,5 +1,4 @@
 local choices = {}
-ctf_modebase.current_mode = "classic" -- Default mode
 
 function ctf_modebase.start_new_match(show_form)
 	if show_form then
@@ -78,20 +77,22 @@ function ctf_modebase.place_map(mode_def, mapidx)
 
 	local map = ctf_map.place_map(mapidx, dirlist[mapidx])
 
-	-- Set everything from map meta for players
+	-- Set time, time_speed, skyboxes, and physics
 
-	minetest.set_timeofday(map.start_time/2400 or ctf_map.DEFAULT_START_TIME)
+	minetest.set_timeofday(map.start_time/2400)
+
 	for _, player in pairs(minetest.get_connected_players()) do
 		local name = PlayerName(player)
 		local pinv = player:get_inventory()
+
 		if map.initial_stuff ~= nil then
 			for _, item in pairs(map.initial_stuff) do
 				pinv:add_item("main", ItemStack(item))
 			end
 		end
-		if map.skybox == "none" or nil then skybox.set(player, 0)
-		else skybox.set(player, map.skybox)
-		end
+
+		skybox.set(player, table.indexof(ctf_map.skyboxes, map.skybox))
+
 		physics.set(name, "ctf_modebase:initialization", {
 			speed = map.phys_speed,
 			jump = map.phys_jump,
@@ -100,7 +101,7 @@ function ctf_modebase.place_map(mode_def, mapidx)
 		-- TODO: time_speed
 	end
 
-	-- finish
+	-- Allocate teams and start match
 
 	ctf_teams.allocate_teams(map.teams)
 
