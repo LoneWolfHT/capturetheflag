@@ -93,7 +93,7 @@ function ctf_modebase.place_map(mode_def, mapidx)
 
 		skybox.set(player, table.indexof(ctf_map.skyboxes, map.skybox))
 
-		physics.set(name, "ctf_modebase:initialization", {
+		physics.set(name, "ctf_modebase:map_physics", {
 			speed = map.phys_speed,
 			jump = map.phys_jump,
 			gravity = map.phys_gravity,
