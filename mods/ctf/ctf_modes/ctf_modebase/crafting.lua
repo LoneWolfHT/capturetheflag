@@ -100,24 +100,6 @@ crafting.register_recipe({
 	level  = 1,
 })
 
--- Ammo <== Tin ingot x3 + Coal lump x2
-crafting.register_recipe({
-	type   = "inv",
-	output = "shooter:ammo",
-	items  = { "default:tin_ingot 2", "default:coal_lump" },
-	always_known = true,
-	level  = 1,
-})
-
--- Ammo <== Steel ingot x3 + Coal lump x2
-crafting.register_recipe({
-	type   = "inv",
-	output = "shooter:ammo 2",
-	items  = { "default:steel_ingot 2", "default:coal_lump 2" },
-	always_known = true,
-	level  = 1,
-})
-
 -- Wooden ladder x4
 crafting.register_recipe({
 	type   = "inv",
