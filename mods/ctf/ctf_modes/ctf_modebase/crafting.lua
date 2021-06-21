@@ -67,7 +67,7 @@ crafting.register_recipe({
 -- Team door
 crafting.register_recipe({
 	type   = "inv",
-	output = "ctf_map:team_door",
+	output = "ctf_teams:door",
 	items  = { "default:steel_ingot 6" },
 	always_known = true,
 	level  = 1,
