@@ -28,7 +28,7 @@ local sword_materials = {
 for material, craft_material in pairs(sword_materials) do
 	crafting.register_recipe({
 		type   = "inv",
-		output = "default:sword_" .. material,
+		output = "ctf_melee:sword_" .. material,
 		items  = { "default:stick", craft_material .. " 2" },
 		always_known = true,
 		level  = 1,
