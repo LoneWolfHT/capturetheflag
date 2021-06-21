@@ -55,8 +55,7 @@ function ctf_modebase.start_new_match(show_form)
 
 			start_new_match()
 				
-			local new_mode = ctf_modebase.current_mode
-			RunCallbacks(ctf_modebase.registered_on_new_mode, new_mode, old_mode)
+			RunCallbacks(ctf_modebase.registered_on_new_mode, most.n, old_mode)
 		end)
 	else
 		start_new_match()
