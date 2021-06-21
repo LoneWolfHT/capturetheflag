@@ -121,7 +121,7 @@ crafting.register_recipe({
 -- Shovels
 for ore, ore_item in pairs(full_ores) do
 	local show = true
-	if ore == "diamond" or ore == "mese" or ore == "bronze" then
+	if ore == "diamond" or ore == "mese" then
 		show = false
 	end
 
