@@ -1,12 +1,12 @@
 --
 --- PLAYERS
 --
-
+local get_player_by_name = minetest.get_player_by_name
 function PlayerObj(player)
 	local type = type(player)
 
 	if type == "string" then
-		return minetest.get_player_by_name(player)
+		return get_player_by_name(player)
 	elseif type == "userdata" and player:is_player() then
 		return player
 	end
@@ -80,10 +80,19 @@ function vector.sign(a)
 	return vector.new(math.sign(a.x), math.sign(a.y), math.sign(a.z))
 end
 
+local vsort = vector.sort
 function ctf_core.area_contains(pos1, pos2, pos)
-	pos1, pos2 = vector.sort(pos1, pos2)
+	pos1, pos2 = vsort(pos1, pos2)
 
 	return pos.x >= pos1.x and pos.x <= pos2.x
 	   and pos.y >= pos1.y and pos.y <= pos2.y
 	   and pos.z >= pos1.z and pos.z <= pos2.z
+end
+
+if not math.round then
+	local m_floor = math.floor
+
+	function math.round(x)
+		return m_floor(x + 0.5)
+	end
 end
