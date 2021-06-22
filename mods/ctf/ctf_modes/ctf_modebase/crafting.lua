@@ -131,7 +131,7 @@ for ore, ore_item in pairs(full_ores) do
 		items  = { "default:stick 2", ore_item },
 		always_known = show,
 		level  = 1,
-	}),
+	})
 	
 	crafting.register_recipe({
 		type   = "inv",
