@@ -50,7 +50,9 @@ for _, chest_color in pairs(colors) do
 
 	function def.on_rightclick(pos, node, player)
 		local name = player:get_player_name()
-		if chest_color ~= ctf_teams.get_team(name) then
+		local pteam = ctf_teams.get_team(name)
+
+		if chest_color ~= pteam then
 			minetest.chat_send_player(name, "You're not on team " .. chest_color)
 			return
 		end
