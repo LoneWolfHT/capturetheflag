@@ -58,7 +58,7 @@ for _, chest_color in pairs(colors) do
 			return
 		end
 
-	--	local territory_owner = ctf_core.area_contains(target_map.teams[pteam].pos1, target_map.teams[pteam].pos2, player:get_pos())
+	--	local territory_owner = ctf_core.area_contains(ctf_teams.get_team_territory(pteam), player:get_pos())
 	--	if chest_color ~= territory_owner then
 	--		if not territory_owner then
 	--			ctf_core.warning("ctf_map", "Unowned team chest")
