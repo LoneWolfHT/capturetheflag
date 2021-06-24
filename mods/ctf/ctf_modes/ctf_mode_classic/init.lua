@@ -120,4 +120,16 @@ ctf_modebase.register_mode("classic", {
 
 		minetest.after(3, ctf_modebase.start_new_match)
 	end,
+	get_chest_access = function(player)
+		local name = PlayerName(player)
+		local rank = rankings.get(name)
+	
+		if not rank then return end
+	
+		if rank.score >= 100 then
+			return "pro"
+		elseif rank.score >= 10 then
+			return true
+		end
+	end,
 })
