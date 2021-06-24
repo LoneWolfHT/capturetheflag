@@ -1,9 +1,6 @@
 local blacklist = {
-	"default:leaves",
-	"default:jungleleaves",
 	"default:pine_needles",
-	"default:acacia_leaves",
-	"default:aspen_leaves"
+	".*leaves$",
 }
 
 function ctf_teams.is_allowed_in_team_chest(listname, stack, player)
