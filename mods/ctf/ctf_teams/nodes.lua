@@ -9,7 +9,7 @@ function ctf_teams.is_allowed_in_team_chest(listname, stack, player)
 	end
 
 	for _, itemstring in ipairs(blacklist) do
-		if stack:get_name() == itemstring then
+		if stack:get_name():match(itemstring) then
 			return false
 		end
 	end
