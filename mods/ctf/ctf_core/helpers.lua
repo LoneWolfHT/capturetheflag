@@ -46,8 +46,11 @@ end)
 --
 
 -- Credit to https://stackoverflow.com/q/20284515/11433667 for capitalization
+local gsub = string.gsub
 function HumanReadable(string)
-	return string:gsub("(%l)(%w*)", function(a,b) return string.upper(a)..b end)
+	local out = gsub(string, "(%l)(%w*)", function(a,b) return string.upper(a)..b end)
+
+	return gsub(out, "_", " ")
 end
 
 --
@@ -95,4 +98,32 @@ if not math.round then
 	function math.round(x)
 		return m_floor(x + 0.5)
 	end
+end
+
+--
+---Debug helpers
+--
+
+function ctf_core.error(area, msg)
+	minetest.log("error", "[CTF | " .. area .. "] " .. msg)
+end
+
+function ctf_core.log(area, msg)
+	if area and area ~= "" then
+		minetest.log("info", "[CTF | " .. area .. "] " .. msg)
+	else
+		minetest.log("info", "[CTF]" .. msg)
+	end
+end
+
+function ctf_core.action(area, msg)
+	if area and area ~= "" then
+		minetest.log("action", "[CaptureTheFlag] (" .. area .. ") " .. msg)
+	else
+		minetest.log("action", "[CaptureTheFlag] " .. msg)
+	end
+end
+
+function ctf_core.warning(area, msg)
+	minetest.log("warning", "[CTF | " .. area .. "] " .. msg)
 end
