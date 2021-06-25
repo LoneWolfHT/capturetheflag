@@ -144,4 +144,21 @@ ctf_modebase.register_mode("classic", {
 		end
 	end,
 	summary_func = summary_func,
+	on_punchplayer = function(player, hitter)
+		local player = player:get_player_name()
+		local hitter = hitter:get_player_name()
+		
+		if ctf_teams.get_team(player) == ctf_teams.get_team(hitter) and ctf_teams.get_team(player) ~= nil and player ~= hitter then
+			if build_timer.in_progress() then
+				minetest.chat_send_player(hitter, "match hasn't started")
+				return true
+			else
+				minetest.chat_send_player(hitter, player .. " is on your team")
+				return true
+			end
+		elseif build_timer.in_progress() then
+			minetest.chat_send_player(hitter, "match hasn't started")
+			return true
+		end
+	end,
 })
