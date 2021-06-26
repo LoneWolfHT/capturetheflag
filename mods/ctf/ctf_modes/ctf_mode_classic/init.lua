@@ -77,6 +77,10 @@ ctf_modebase.register_mode("classic", {
 		end)
 
 		ctf_map.place_chests(mapdef)
+			
+		for _, player in pairs(minetest.get_connected_players()) do
+			player:set_hp(player:get_properties().hp_max)
+		end
 	end,
 	on_allocplayer = function(player, teamname)
 		player:set_properties({
