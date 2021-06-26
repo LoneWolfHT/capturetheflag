@@ -40,9 +40,10 @@ function ctf_map.place_map(idx, dirname, mapmeta)
 	end
 
 	for _, object_drop in pairs(minetest.get_objects_in_area(mapmeta.pos1, mapmeta.pos2)) do
+		if object_drop:is_player() then return end
+
 		local drop = object_drop:get_luaentity()
 		if drop and drop.name == "__builtin:item" then
-			if object_drop:is_player() then return end
 			object_drop:remove()
 		end
 	end
