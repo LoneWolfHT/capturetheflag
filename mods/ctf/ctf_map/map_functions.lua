@@ -17,6 +17,7 @@ function ctf_map.place_map(idx, dirname, mapmeta)
 
 	local schempath = ctf_map.maps_dir .. dirname .. "/map.mts"
 	local res = minetest.place_schematic(mapmeta.pos1, schempath)
+	local pos1, pos2 = mapmeta.pos1, mapmeta.pos2
 
 	for name, def in pairs(mapmeta.teams) do
 		local p = def.flag_pos
@@ -36,6 +37,14 @@ function ctf_map.place_map(idx, dirname, mapmeta)
 					end
 				end
 			end
+		end
+	end
+
+	for _, object_drop in pairs(minetest.get_objects_in_area(pos1, pos2)) do
+		local drop = object_drop:get_luaentity()
+		if drop and drop.name == "__builtin:item" then
+			if object_drop:is_player() then return end
+			object_drop:remove()
 		end
 	end
 
