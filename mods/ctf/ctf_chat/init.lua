@@ -66,7 +66,7 @@ handler = function(name, message)
 			minetest.chat_send_player(name, "-!- You don't have permission to speak.")
 			return true
 		end
-		local tcolor = ctf_teams.team[ctf_teams.get_team(name)].color
+		local tcolor = ctf_teams.team[pteam].color
 		minetest.chat_send_all(minetest.colorize(tcolor,
 				"<" .. name .. "> ") .. message)
 		return true
