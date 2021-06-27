@@ -11,7 +11,7 @@ local function summary_func(name)
 end
 
 function mode_classic.tp_player_near_flag(player)
-	local tname = ctf_teams.get_team(player)
+	local tname = ctf_teams.get(player)
 
 	if not tname then return end
 
@@ -83,6 +83,8 @@ ctf_modebase.register_mode("classic", {
 			textures = {"character.png^(ctf_mode_classic_shirt.png^[colorize:"..ctf_teams.team[teamname].color..":180)"}
 		})
 
+		ctf_playertag.set(player, ctf_playertag.TYPE_ENTITY)
+
 		player:set_hp(player:get_properties().hp_max)
 
 		mode_classic.tp_player_near_flag(player)
@@ -110,7 +112,11 @@ ctf_modebase.register_mode("classic", {
 			return "You can't take the enemy flag during build time!"
 		end
 
-		mode_classic.celebrate_team(ctf_teams.get_team(player))
+		local pteam = ctf_teams.get(player)
+		local tcolor = pteam and ctf_teams.team[pteam].color or "#FFF"
+		ctf_playertag.set(minetest.get_player_by_name(player), ctf_playertag.TYPE_BUILTIN, tcolor)
+
+		mode_classic.celebrate_team(ctf_teams.get(player))
 
 		rankings.add(player, {score = 20, flag_attempts = 1})
 
@@ -118,9 +124,11 @@ ctf_modebase.register_mode("classic", {
 	end,
 	on_flag_drop = function(player, teamname)
 		minetest.after(0, flag_huds.update)
+
+		ctf_playertag.set(minetest.get_player_by_name(player), ctf_playertag.TYPE_ENTITY)
 	end,
 	on_flag_capture = function(player, captured_team)
-		mode_classic.celebrate_team(ctf_teams.get_team(player))
+		mode_classic.celebrate_team(ctf_teams.get(player))
 
 		minetest.after(0, flag_huds.update)
 
@@ -131,6 +139,8 @@ ctf_modebase.register_mode("classic", {
 
 			ctf_modebase.show_summary_gui(summary_func(pname))
 		end
+
+		ctf_playertag.set(minetest.get_player_by_name(player), ctf_playertag.TYPE_ENTITY)
 
 		minetest.after(3, ctf_modebase.start_new_match)
 	end,
@@ -148,7 +158,7 @@ ctf_modebase.register_mode("classic", {
 	summary_func = summary_func,
 	on_punchplayer = function(player, hitter)
 		local pname, hname = player:get_player_name(), hitter:get_player_name()
-		local pteam, hteam = ctf_teams.get_team(player), ctf_teams.get_team(hitter)
+		local pteam, hteam = ctf_teams.get(player), ctf_teams.get(hitter)
 
 		if not pteam then
 			minetest.chat_send_player(hname, pname .. " is not in a team!")
