@@ -79,8 +79,9 @@ table.insert(minetest.registered_on_chat_messages, 1, handler)
 minetest.registered_chatcommands["me"].func = function(name, param)
 	me_func(name, param)
 
-	if ctf_teams.get_team(name) then
-		local tcolor = ctf_teams.team[ctf_teams.get_team(name)].color
+	local pteam = ctf_teams.get_team(name)
+	if pteam then
+		local tcolor = ctf_teams.team[pteam].color
 		name = minetest.colorize(tcolor, "* " .. name)
 	else
 		name = "* ".. name
