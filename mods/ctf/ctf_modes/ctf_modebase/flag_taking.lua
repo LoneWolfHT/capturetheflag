@@ -7,17 +7,27 @@ ctf_modebase.register_on_new_match(function(mapdef, old_mapdef)
 	end
 end)
 
-local function drop_flags(pname, dont_run_callbacks)
+local function drop_flags(pname, dont_return)
 	local flagteams = ctf_modebase.taken_flags[pname]
 
 	if flagteams then
 		for _, flagteam in pairs(flagteams) do
 			ctf_modebase.flag_taken[flagteam] = false
+
+			if not dont_return then
+				local fpos = vector.offset(ctf_map.current_map.teams[flagteam].flag_pos, 0, 1, 0)
+
+				if minetest.get_node(fpos).name == "ctf_modebase:flag_captured_top" then
+					minetest.set_node(fpos, {name = "ctf_modebase:flag_top_"..flagteam})
+				else
+					ctf_core.error("ctf_modebase:flag_taking", "Failed to return flag to its position")
+				end
+			end
 		end
 
 		ctf_modebase.taken_flags[pname] = nil
 
-		if not dont_run_callbacks then
+		if not dont_return then
 			RunCallbacks(ctf_modebase.registered_on_flag_drop, pname, flagteams)
 		end
 	end
@@ -35,16 +45,16 @@ function ctf_modebase.flag_on_punch(puncher, nodepos, node)
 	local target_team = node.name:sub(node.name:find("top_") + 4)
 
 	if pteam ~= target_team then
-		if not ctf_modebase.taken_flags[pname] then
-			ctf_modebase.taken_flags[pname] = {}
-		end
-
-		table.insert(ctf_modebase.taken_flags[pname], target_team)
-		ctf_modebase.flag_taken[target_team] = pname
-
 		local result = RunCallbacks(ctf_modebase.registered_on_flag_take, pname, target_team)
 
 		if not result then
+			if not ctf_modebase.taken_flags[pname] then
+				ctf_modebase.taken_flags[pname] = {}
+			end
+
+			table.insert(ctf_modebase.taken_flags[pname], target_team)
+			ctf_modebase.flag_taken[target_team] = pname
+
 			minetest.set_node(nodepos, {name = "ctf_modebase:flag_captured_top", param2 = node.param2})
 		elseif type(result) == "string" then
 			minetest.chat_send_player(pname, "You can't take that flag. Reason: "..result)

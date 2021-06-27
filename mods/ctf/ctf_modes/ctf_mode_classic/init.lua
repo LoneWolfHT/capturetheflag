@@ -66,7 +66,7 @@ ctf_modebase.register_mode("classic", {
 		["default:apple"] = {min_count = 5, max_count = 30, rarity = 0.1, max_stacks = 2},
 	},
 	physics = {sneak_glitch = true, new_move = false},
-	commands = {"start", "rank", "r"},
+	commands = {"ctf_start", "rank", "r"},
 	on_new_match = function(mapdef)
 		rankings.reset_recent()
 
@@ -82,6 +82,8 @@ ctf_modebase.register_mode("classic", {
 		player:set_properties({
 			textures = {"character.png^(ctf_mode_classic_shirt.png^[colorize:"..ctf_teams.team[teamname].color..":180)"}
 		})
+
+		player:set_hp(player:get_properties().hp_max)
 
 		mode_classic.tp_player_near_flag(player)
 
@@ -112,15 +114,15 @@ ctf_modebase.register_mode("classic", {
 
 		rankings.add(player, {score = 20, flag_attempts = 1})
 
-		flag_huds.update()
+		minetest.after(0, flag_huds.update)
 	end,
 	on_flag_drop = function(player, teamname)
-		flag_huds.update()
+		minetest.after(0, flag_huds.update)
 	end,
 	on_flag_capture = function(player, captured_team)
 		mode_classic.celebrate_team(ctf_teams.get_team(player))
 
-		flag_huds.update()
+		minetest.after(0, flag_huds.update)
 
 		rankings.add(player, {score = 30, flag_captures = 1})
 
@@ -144,4 +146,25 @@ ctf_modebase.register_mode("classic", {
 		end
 	end,
 	summary_func = summary_func,
+	on_punchplayer = function(player, hitter)
+		local pname, hname = player:get_player_name(), hitter:get_player_name()
+		local pteam, hteam = ctf_teams.get_team(player), ctf_teams.get_team(hitter)
+
+		if not pteam then
+			minetest.chat_send_player(hname, pname .. " is not in a team!")
+			return true
+		elseif not hteam then
+			minetest.chat_send_player(hname, "You are not in a team!")
+			return true
+		end
+
+		if pteam == hteam then
+			minetest.chat_send_player(hname, pname .. " is on your team!")
+
+			return true
+		elseif build_timer.in_progress() then
+			minetest.chat_send_player(hname, "The match hasn't started yet!")
+			return true
+		end
+	end,
 })
