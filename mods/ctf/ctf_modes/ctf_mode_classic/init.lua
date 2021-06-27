@@ -83,8 +83,7 @@ ctf_modebase.register_mode("classic", {
 			textures = {"character.png^(ctf_mode_classic_shirt.png^[colorize:"..ctf_teams.team[teamname].color..":180)"}
 		})
 			
-		ctf_playertag.set(player,
-			ctf_playertag.TYPE_ENTITY)
+		ctf_playertag.set(player, ctf_playertag.TYPE_ENTITY)
 
 		player:set_hp(player:get_properties().hp_max)
 
