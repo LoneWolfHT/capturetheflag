@@ -53,7 +53,8 @@ end
 
 local handler
 handler = function(name, message)
-	if ctf_teams.get_team(name) then
+	local pteam = ctf_teams.get_team(name)
+	if pteam then
 		for i = 1, #minetest.registered_on_chat_messages do
 			local func = minetest.registered_on_chat_messages[i]
 			if func ~= handler and func(name, message) then
