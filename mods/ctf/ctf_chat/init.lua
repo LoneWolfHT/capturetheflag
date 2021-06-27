@@ -28,7 +28,8 @@ local function me_func() end
 
 if minetest.global_exists("irc") then
 	function irc.playerMessage(name, message)
-		local color = ctf_teams.team[ctf_teams.get_team(player)].color
+		local pteam = ctf_teams.get_team(player)
+		local color = pteam and ctf_teams.team[pteam].color or "#FFF"
 		local clear = "\x0F"
 		if color then
 			color = "\x03" .. color
