@@ -70,7 +70,7 @@ handler = function(name, message)
 				"<" .. name .. "> ") .. message)
 		return true
 	else
-		return nil
+		return
 	end
 end
 table.insert(minetest.registered_on_chat_messages, 1, handler)
