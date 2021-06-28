@@ -91,3 +91,35 @@ minetest.registered_chatcommands["me"].func = function(name, param)
 
 	minetest.chat_send_all(name .. " " .. param)
 end
+
+minetest.register_chatcommand("t", {
+    params = "msg",
+    description = "Send a message on the team channel",
+    privs = { interact = true, shout = true },
+    func = function(name, param)
+        if param == "" then
+            return false, "-!- Empty team message, see /help t"
+        end
+
+        local tname = ctf_teams.get(name)
+        local team = ctf_teams.get_team(tname)
+        if team then
+            minetest.log("action", tname .. "<" .. name .. "> ** ".. param .. " **")
+            if minetest.global_exists("chatplus") then
+                chatplus.log("<" .. name .. "> ** ".. param .. " **")
+            end
+
+            local tcolor = tname and ctf_teams.team[tname].color 
+            for _, username in pairs(team) do
+                minetest.chat_send_player(username,
+                        minetest.colorize(tcolor, "<" .. name .. "> ** " .. param .. " **"))
+            end
+            if minetest.global_exists("irc") and irc.feature_mod_channel then
+                irc:say(irc.config.channel, tname .. "<" .. name .. "> ** " .. param .. " **", true)
+            end
+        else
+            minetest.chat_send_player(name,
+                    "You're not in a team, so you have no team to talk to.")
+        end
+    end
+})
