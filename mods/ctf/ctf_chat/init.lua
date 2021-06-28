@@ -102,14 +102,15 @@ minetest.register_chatcommand("t", {
         end
 
         local tname = ctf_teams.get(name)
-        local team = ctf_teams.get_team(tname)
-        if team then
+        if tname then
+     	   local team = ctf_teams.get_team(tname)
+
             minetest.log("action", tname .. "<" .. name .. "> ** ".. param .. " **")
             if minetest.global_exists("chatplus") then
                 chatplus.log("<" .. name .. "> ** ".. param .. " **")
             end
 
-            local tcolor = tname and ctf_teams.team[tname].color 
+            local tcolor = ctf_teams.team[tname].color 
             for _, username in pairs(team) do
                 minetest.chat_send_player(username,
                         minetest.colorize(tcolor, "<" .. name .. "> ** " .. param .. " **"))
