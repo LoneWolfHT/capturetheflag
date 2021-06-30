@@ -95,14 +95,19 @@ grenades.register_grenade("grenades:smoke", {
 		local player = minetest.get_player_by_name(pname)
 		if not player or not pos then return end
 
-		local fpos = ctf_classes.get_flag_pos(player)
+		local flagteams = ctf_modebase.taken_flags[pname]
+		if flagteams then
+			for _, flagteam in pairs(flagteams) do
+				local fpos = ctf_map.current_map.teams[flagteam].flag_pos
 
-		if not fpos then return end
+				if not fpos then return end
 
-		if vector.distance(pos, fpos) <= 15 then
-			minetest.chat_send_player(pname, "You can't explode smoke grenades so close to your flag!")
-			player:get_inventory():add_item("main", "grenades:smoke")
-			return
+				if vector.distance(pos, fpos) <= 15 then
+					minetest.chat_send_player(pname, "You can't explode smoke grenades so close to your flag!")
+					player:get_inventory():add_item("main", "grenades:smoke")
+					return
+				end
+			end
 		end
 
 		minetest.sound_play("grenades_glasslike_break", {
