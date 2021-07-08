@@ -1,10 +1,12 @@
-local old_protected = minetest.is_protected
-minetest.is_protected = function(pos, ...)
-	local foundpos = minetest.find_node_near(pos, 2, "ctf_modebase:flag", true)
-	if foundpos and pos.y >= foundpos.y-1 then
-		return true
-	else
-		return old_protected(pos, ...)
+if ctf_core.settings.server_mode == "play" then
+	local old_protected = minetest.is_protected
+	minetest.is_protected = function(pos, ...)
+		local foundpos = minetest.find_node_near(pos, 2, "ctf_modebase:flag", true)
+		if foundpos and pos.y >= foundpos.y-1 then
+			return true
+		else
+			return old_protected(pos, ...)
+		end
 	end
 end
 
@@ -93,8 +95,8 @@ for name, def in pairs(ctf_teams.team) do
 			"default_wood.png",
 			"default_wood.png",
 			"default_wood.png",
-			"default_wood.png^(wool_white.png^[colorize:"..color..":200^[mask:flag_mask.png)",
-			"default_wood.png^(wool_white.png^[colorize:"..color..":200^[mask:flag_mask2.png)"
+			"default_wood.png^(wool_white.png^[colorize:"..color..":200^[mask:ctf_modebase_flag_mask.png)",
+			"default_wood.png^(wool_white.png^[colorize:"..color..":200^[mask:ctf_modebase_flag_mask2.png)"
 		},
 		node_box = {
 			type = "fixed",

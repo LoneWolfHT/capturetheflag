@@ -67,7 +67,10 @@ local fragdef = {
 
 			if hit and player and v:is_player() and v:get_hp() > 0 and hit.type == "object" and hit.ref:is_player() and
 			hit.ref:get_player_name() == v:get_player_name() then
-				v:punch(player, 2, {damage_groups = {grenade = 1, fleshy = 30 - ((radius/3) * vector.distance(pos, v:get_pos()))}}, nil)
+				v:punch(player, 2, {damage_groups = {
+					grenade = 1,
+					fleshy = 30 - ((radius/3) * vector.distance(pos, v:get_pos()))
+				}}, nil)
 			end
 		end
 	end,
@@ -95,14 +98,18 @@ grenades.register_grenade("grenades:smoke", {
 		local player = minetest.get_player_by_name(pname)
 		if not player or not pos then return end
 
-		local fpos = ctf_classes.get_flag_pos(player)
+		local pteam = ctf_teams.get(pname)
 
-		if not fpos then return end
+		if pteam then
+			local fpos = ctf_map.current_map.teams[pteam].flag_pos
 
-		if vector.distance(pos, fpos) <= 15 then
-			minetest.chat_send_player(pname, "You can't explode smoke grenades so close to your flag!")
-			player:get_inventory():add_item("main", "grenades:smoke")
-			return
+			if not fpos then return end
+
+			if vector.distance(pos, fpos) <= 15 then
+				minetest.chat_send_player(pname, "You can't explode smoke grenades so close to your flag!")
+				player:get_inventory():add_item("main", "grenades:smoke")
+				return
+			end
 		end
 
 		minetest.sound_play("grenades_glasslike_break", {

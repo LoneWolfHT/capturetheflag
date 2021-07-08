@@ -8,10 +8,15 @@ local concat = table.concat
 ---@param name string Player name
 ---@param rankings table Recent rankings to show in the gui
 ---@param rank_values table Example: `{_sort = "score", "captures" "kills"}`
----@param extra_rank_values table Not yet implemented, will be for extra unimportant rankings
-function ctf_modebase.show_summary_gui(name, rankings, rank_values, extra_rank_values)
+---@param formdef table table for customizing the formspec
+function ctf_modebase.show_summary_gui(name, rankings, rank_values, formdef)
+	rank_values = table.copy(rank_values)
+
 	local rows = {}
 	local sort_by
+
+	if not formdef then formdef = {} end
+	if not formdef.buttons then formdef.buttons = {} end
 
 	if rank_values._sort then
 		insert(rank_values, 1, rank_values._sort)
@@ -20,11 +25,20 @@ function ctf_modebase.show_summary_gui(name, rankings, rank_values, extra_rank_v
 	sort_by = rank_values[1]
 
 	for pname, ranks in pairs(rankings) do
-		local team = get_team(pname)
-		local color = "grey"
+		local color = "white"
 
-		if team then
-			color = teams[team].color
+		if not formdef.disable_nonuser_colors then
+			if not ranks._row_color then
+				local team = get_team(pname)
+
+				if team then
+					color = teams[team].color
+				end
+			else
+				color = ranks._row_color
+			end
+		elseif name == pname then
+			color = "gold"
 		end
 
 		local row = format("%s,%s", color, pname)
@@ -44,12 +58,12 @@ function ctf_modebase.show_summary_gui(name, rankings, rank_values, extra_rank_v
 	end
 
 	ctf_gui.show_formspec(name, "ctf_modebase:summary", {
-		title = "Match Summary",
+		title = formdef.title or "Match Summary",
 		elements = {
-			test = {
+			rankings = {
 				type = "table",
 				pos = {"center", 0},
-				size = {ctf_gui.FORM_SIZE[1]-1, ctf_gui.FORM_SIZE[2]-2},
+				size = {ctf_gui.FORM_SIZE[1]-1, ctf_gui.FORM_SIZE[2] - (ctf_gui.ELEM_SIZE[2] + 3)},
 				options = {
 					highlight = "#00000000",
 				},
@@ -63,7 +77,39 @@ function ctf_modebase.show_summary_gui(name, rankings, rank_values, extra_rank_v
 					"", "white", "Player Name", HumanReadable(concat(rank_values, "  ,")),
 					concat(rows, ",")
 				}
-			}
+			},
+			next = formdef.buttons.next and {
+				type = "button",
+				label = "See Current",
+				pos = {"center", ctf_gui.FORM_SIZE[2] - (ctf_gui.ELEM_SIZE[2] + 2.5)},
+				func = function(playername, fields, field_name)
+					local current_mode = ctf_modebase:get_current_mode()
+
+					if not current_mode then return end
+
+					local result, ranks, match_rank_values, newbuttons = current_mode.summary_func(playername)
+
+					if result then
+						ctf_modebase.show_summary_gui(playername, ranks, match_rank_values, newbuttons)
+					end
+				end,
+			},
+			previous = formdef.buttons.previous and {
+				type = "button",
+				label = "See Previous",
+				pos = {"center", ctf_gui.FORM_SIZE[2] - (ctf_gui.ELEM_SIZE[2] + 2.5)},
+				func = function(playername, fields, field_name)
+					local current_mode = ctf_modebase:get_current_mode()
+
+					if not current_mode then return end
+
+					local result, ranks, match_rank_values, newbuttons = current_mode.summary_func(playername, "previous")
+
+					if result then
+						ctf_modebase.show_summary_gui(playername, ranks, match_rank_values, newbuttons)
+					end
+				end,
+			},
 		}
 	})
 end
@@ -78,7 +124,13 @@ minetest.register_chatcommand("summary", {
 		end
 
 		if current_mode.summary_func then
-			ctf_modebase.show_summary_gui(current_mode.summary_func(name, param))
+			local result, rankings, rank_values, buttons = current_mode.summary_func(name, param)
+
+			if result then
+				ctf_modebase.show_summary_gui(name, rankings, rank_values, buttons)
+			else
+				return result, rankings -- rankings holds an error message in this case
+			end
 
 			return true
 		else

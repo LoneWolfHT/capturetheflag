@@ -32,13 +32,15 @@ function ctf_ranged.register_simple_weapon(name, def)
 		loaded_def.groups.not_in_creative_inventory = nil
 		loaded_def.on_use = function(itemstack, user)
 			if shoot_cooldown:get(user) then
-				if def.automatic then
-					rawf.enable_automatic(0, itemstack, user)
-				end
-
 				return
-			elseif def.automatic then
-				rawf.enable_automatic(def.fire_interval, itemstack, user)
+			end
+
+			if def.automatic then
+				if not rawf.enable_automatic(def.fire_interval, itemstack, user) then
+					return
+				end
+			else
+				shoot_cooldown:start(user, def.fire_interval)
 			end
 
 			local spawnpos, look_dir = rawf.get_bullet_start_data(user)
@@ -74,15 +76,23 @@ function ctf_ranged.register_simple_weapon(name, def)
 
 				if hitpoint then
 					if hitpoint.type == "node" then
-						minetest.add_particle({
-							pos = vector.subtract(hitpoint.intersection_point, vector.multiply(look_dir, 0.04)),
-							velocity = vector.new(),
-							acceleration = {x=0, y=0, z=0},
-							expirationtime = def.bullethole_lifetime or 3,
-							size = 1,
-							collisiondetection = false,
-							texture = "ctf_ranged_bullethole.png",
-						})
+						local nodedef = minetest.registered_nodes[minetest.get_node(hitpoint.under).name]
+
+						if nodedef.groups.snappy or (nodedef.groups.oddly_breakable_by_hand or 0) >= 3 then
+							if not minetest.is_protected(hitpoint.under, user:get_player_name()) then
+								minetest.dig_node(hitpoint.under)
+							end
+						else
+							minetest.add_particle({
+								pos = vector.subtract(hitpoint.intersection_point, vector.multiply(look_dir, 0.04)),
+								velocity = vector.new(),
+								acceleration = {x=0, y=0, z=0},
+								expirationtime = def.bullethole_lifetime or 3,
+								size = 1,
+								collisiondetection = false,
+								texture = "ctf_ranged_bullethole.png",
+							})
+						end
 					elseif hitpoint.type == "object" then
 						hitpoint.ref:punch(user, 1, {
 							full_punch_interval = 1,
@@ -91,8 +101,6 @@ function ctf_ranged.register_simple_weapon(name, def)
 					end
 				end
 			end
-
-			shoot_cooldown:start(user, def.fire_interval)
 
 			return rawf.unload_weapon(itemstack)
 		end
@@ -105,10 +113,10 @@ ctf_ranged.register_simple_weapon("ctf_ranged:pistol", {
 	texture = "ctf_ranged_pistol.png",
 	fire_sound = "ctf_ranged_pistol",
 	rounds = 30,
-	range = 50,
-	damage = 4,
+	range = 75,
+	damage = 1,
 	automatic = true,
-	fire_interval = 0.2,
+	fire_interval = 0.6,
 })
 
 ctf_ranged.register_simple_weapon("ctf_ranged:rifle", {
@@ -117,7 +125,7 @@ ctf_ranged.register_simple_weapon("ctf_ranged:rifle", {
 	texture = "ctf_ranged_rifle.png",
 	fire_sound = "ctf_ranged_rifle",
 	rounds = 40,
-	range = 76,
+	range = 150,
 	damage = 6,
 	fire_interval = 0.7,
 })
@@ -132,7 +140,7 @@ ctf_ranged.register_simple_weapon("ctf_ranged:shotgun", {
 		spread = 3,
 	},
 	rounds = 10,
-	range = 15,
+	range = 25,
 	damage = 1,
 	fire_interval = 2,
 })
@@ -147,7 +155,7 @@ ctf_ranged.register_simple_weapon("ctf_ranged:smg", {
 	},
 	automatic = true,
 	rounds = 40,
-	range = 50,
+	range = 75,
 	damage = 1,
 	fire_interval = 0.1,
 })

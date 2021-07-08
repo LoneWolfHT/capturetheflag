@@ -56,7 +56,7 @@ minetest.register_node("ctf_map:ind_stone_red", {
 	tiles = {"ctf_map_stone_red.png"},
 	is_ground_content = false
 })
-ctf_map.barrier_nodes[minetest.get_content_id("ctf_map:ind_stone_red")] = "default:stone"
+ctf_map.barrier_nodes[minetest.get_content_id("ctf_map:ind_stone_red")] = minetest.get_content_id("default:stone")
 
 minetest.register_node("ctf_map:killnode", {
 	description = "Kill Node",

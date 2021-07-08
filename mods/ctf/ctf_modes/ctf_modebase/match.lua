@@ -2,6 +2,9 @@ local voting = false
 local voters = {}
 local timer = 0
 
+-- List of all maps placed during the current mode
+local maps_placed = {}
+
 local check_interval = 0
 minetest.register_globalstep(function(dtime)
 	if not voting then return end
@@ -37,14 +40,14 @@ minetest.register_globalstep(function(dtime)
 	voting = false
 	voters = {}
 
-	ctf_modebase.current_mode = votes._most.n or ctf_modebase.modelist[math.random(1, #ctf_modebase.modelist)]
+	local new_mode = votes._most.n or ctf_modebase.modelist[math.random(1, #ctf_modebase.modelist)]
 
 	minetest.chat_send_all(string.format("Voting is over, '%s' won with %d votes!",
-		HumanReadable(ctf_modebase.current_mode),
+		HumanReadable(new_mode),
 		votes._most.c or 0
 	))
 
-	ctf_modebase.start_new_match(nil, true)
+	ctf_modebase.start_new_match(nil, new_mode)
 end)
 
 minetest.register_on_joinplayer(function(player)
@@ -92,12 +95,25 @@ function ctf_modebase.start_mode_vote()
 end
 
 
-function ctf_modebase.start_new_match(show_form, new_mode)
+function ctf_modebase.start_new_match(show_form, new_mode, specific_map)
 	local old_map = ctf_map.current_map
 	local old_mode = ctf_modebase.current_mode
 
 	local function start_new_match()
-		local map = ctf_modebase.place_map(ctf_modebase.current_mode)
+		for _, pos in pairs(ctf_teams.team_chests) do
+			minetest.remove_node(pos)
+		end
+		ctf_teams.team_chests = {}
+
+		if new_mode ~= old_mode then
+			maps_placed = {}
+		end
+
+		if new_mode then
+			ctf_modebase.current_mode = new_mode
+			RunCallbacks(ctf_modebase.registered_on_new_mode, new_mode, old_mode)
+		end
+		local map = ctf_modebase.place_map(new_mode, specific_map)
 
 		give_initial_stuff.reset_stuff_providers()
 
@@ -106,10 +122,6 @@ function ctf_modebase.start_new_match(show_form, new_mode)
 		end)
 
 		RunCallbacks(ctf_modebase.registered_on_new_match, map, old_map)
-
-		if new_mode then
-			RunCallbacks(ctf_modebase.registered_on_new_mode, ctf_modebase.current_mode, old_mode)
-		end
 
 		ctf_teams.allocate_teams(map.teams)
 
@@ -157,7 +169,7 @@ function ctf_modebase.show_modechoose_form(player)
 		on_quit = function(pname)
 			if voting then
 				minetest.after(0.1, function()
-					if not voters[pname].choice then
+					if voting and voters[pname] and not voters[pname].choice then
 						ctf_modebase.show_modechoose_form(pname)
 					end
 				end)
@@ -179,16 +191,23 @@ function ctf_modebase.place_map(mode_def, mapidx)
 	local dirlist = minetest.get_dir_list(ctf_map.maps_dir, true)
 
 	if not mapidx then
-		if mode_def.map_whitelist then
-			mapidx = table.indexof(dirlist, mode_def.map_whitelist[math.random(1, #mode_def.map_whitelist)])
-		else
-			mapidx = math.random(1, #dirlist)
+		local map_pool = mode_def.map_whitelist or dirlist
+		local new_pool = {}
+
+		for _, name in pairs(map_pool) do
+			if table.indexof(maps_placed, name) == -1 then
+				table.insert(new_pool, name)
+			end
 		end
+
+		mapidx = table.indexof(dirlist, new_pool[math.random(1, #new_pool)])
 	elseif type(mapidx) ~= "number" then
 		mapidx = table.indexof(dirlist, mapidx)
 	end
 
 	local map = ctf_map.place_map(mapidx, dirlist[mapidx])
+
+	table.insert(maps_placed, dirlist[mapidx])
 
 	-- Set time, time_speed, skyboxes, and physics
 

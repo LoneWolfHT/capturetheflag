@@ -1,9 +1,9 @@
 ctf_modebase = {
 	-- Time until voting ends
-	VOTING_TIME          = 30,    ---@type integer
+	VOTING_TIME          = 20,    ---@type integer
 
 	-- Amount of maps that need to be played before a mode vote starts
-	MAPS_PER_MODE        = 3,     ---@type integer
+	MAPS_PER_MODE        = 5,     ---@type integer
 
 	-- Table containing all registered modes and their definitions
 	modes                = {},    ---@type table
@@ -27,6 +27,9 @@ ctf_modebase = {
 
 	-- flag_taken[Team Name] = Name of thief
 	flag_taken           = {},
+
+	--flag_captured[Team name] = true if captured, otherwise nil
+	flag_captured        = {},
 }
 
 ctf_gui.init()
@@ -41,7 +44,10 @@ ctf_core.include_files(
 	"match.lua",
 	"flag_taking.lua",
 	"mode_functions.lua",
-	"crafting.lua"
+	"crafting.lua",
+	"hpregen.lua",
+	"respawn_delay.lua",
+	"markers.lua"
 )
 
 if ctf_core.settings.server_mode == "play" then
@@ -57,13 +63,3 @@ if ctf_core.settings.server_mode == "play" then
 		player:set_hp(player:get_properties().hp_max)
 	end)
 end
-
-minetest.register_chatcommand("ctf_next", {
-	description = "Skip to a new match.",
-	privs = {ctf_admin = true},
-	func = function(name, param)
-		ctf_modebase.start_new_match()
-
-		return true
-	end,
-})
