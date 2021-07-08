@@ -129,7 +129,7 @@ ctf_modebase.register_mode("classic", {
 		player:set_properties({
 			textures = {"character.png^(ctf_mode_classic_shirt.png^[colorize:"..tcolor..":180)"}
 		})
-			
+
 		player:hud_set_hotbar_image("gui_hotbar.png^[colorize:" .. ctf_teams.team[teamname].color .. ":180")
 		player:hud_set_hotbar_selected_image("gui_hotbar_selected.png^[colorize:" .. ctf_teams.team[teamname].color .. ":180")
 
