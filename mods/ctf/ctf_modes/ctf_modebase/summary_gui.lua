@@ -14,6 +14,7 @@ function ctf_modebase.show_summary_gui(name, rankings, rank_values, formdef)
 
 	local rows = {}
 	local sort_by
+	local special_rows = {}
 
 	if not formdef then formdef = {} end
 	if not formdef.buttons then formdef.buttons = {} end
@@ -48,17 +49,31 @@ function ctf_modebase.show_summary_gui(name, rankings, rank_values, formdef)
 			row = format("%s,%s", row, ranks[rank] or 0)
 		end
 
-		insert(rows, {row = row, sort = ranks[sort_by] or 0})
+		insert(ranks._special_row and special_rows or rows, {row = row, sort = ranks[sort_by] or 0})
 	end
 
 	sort(rows, function(a, b) return a.sort > b.sort end)
+
+	if #special_rows >= 1 then
+		sort(special_rows, function(a, b) return a.sort > b.sort end)
+
+		for i, c in pairs(special_rows) do
+			special_rows[i] = format("%s,%s", i, c.row)
+		end
+
+		if formdef.special_row_title then
+			insert(special_rows, 1, format(",white,%s,%s", formdef.special_row_title, HumanReadable(concat(rank_values, "  ,"))))
+		end
+
+		insert(special_rows, string.rep(",", #rank_values+3))
+	end
 
 	for i, c in pairs(rows) do
 		rows[i] = format("%s,%s", i, c.row)
 	end
 
 	ctf_gui.show_formspec(name, "ctf_modebase:summary", {
-		title = formdef.title or "Match Summary",
+		title = formdef.title or "Summary",
 		elements = {
 			rankings = {
 				type = "table",
@@ -74,7 +89,8 @@ function ctf_modebase.show_summary_gui(name, rankings, rank_values, formdef)
 					("text;"):rep(#rank_values):sub(1, -2),
 				},
 				rows = {
-					"", "white", "Player Name", HumanReadable(concat(rank_values, "  ,")),
+					#special_rows > 1 and concat(special_rows, ",") or "",
+					"white", "Player Name", HumanReadable(concat(rank_values, "  ,")),
 					concat(rows, ",")
 				}
 			},
@@ -87,10 +103,10 @@ function ctf_modebase.show_summary_gui(name, rankings, rank_values, formdef)
 
 					if not current_mode then return end
 
-					local result, ranks, match_rank_values, newbuttons = current_mode.summary_func(playername)
+					local result, ranks, match_rank_values, newformdef = current_mode.summary_func(playername)
 
 					if result then
-						ctf_modebase.show_summary_gui(playername, ranks, match_rank_values, newbuttons)
+						ctf_modebase.show_summary_gui(playername, ranks, match_rank_values, newformdef)
 					end
 				end,
 			},
@@ -103,10 +119,10 @@ function ctf_modebase.show_summary_gui(name, rankings, rank_values, formdef)
 
 					if not current_mode then return end
 
-					local result, ranks, match_rank_values, newbuttons = current_mode.summary_func(playername, "previous")
+					local result, ranks, match_rank_values, newformdef = current_mode.summary_func(playername, "previous")
 
 					if result then
-						ctf_modebase.show_summary_gui(playername, ranks, match_rank_values, newbuttons)
+						ctf_modebase.show_summary_gui(playername, ranks, match_rank_values, newformdef)
 					end
 				end,
 			},
@@ -124,10 +140,10 @@ minetest.register_chatcommand("summary", {
 		end
 
 		if current_mode.summary_func then
-			local result, rankings, rank_values, buttons = current_mode.summary_func(name, param)
+			local result, rankings, rank_values, formdef = current_mode.summary_func(name, param)
 
 			if result then
-				ctf_modebase.show_summary_gui(name, rankings, rank_values, buttons)
+				ctf_modebase.show_summary_gui(name, rankings, rank_values, formdef)
 			else
 				return result, rankings -- rankings holds an error message in this case
 			end

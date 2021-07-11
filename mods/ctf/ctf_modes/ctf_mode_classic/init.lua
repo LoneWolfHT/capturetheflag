@@ -1,5 +1,5 @@
 mode_classic = {
-	SUMMARY_RANKS = {"flag_captures", _sort = "score", "flag_attempts", "kills", "deaths", "hp_healed"}
+	SUMMARY_RANKS = {"flag_captures", _sort = "score", "flag_attempts", "kills", "kill_assists", "deaths", "hp_healed"}
 }
 
 local flag_huds, rankings, build_timer, crafts = ctf_core.include_files(
@@ -9,7 +9,7 @@ local flag_huds, rankings, build_timer, crafts = ctf_core.include_files(
 	"crafts.lua"
 )
 
-local FLAG_CAPTURE_TIMER = 60 * 2.5
+local FLAG_CAPTURE_TIMER = 60 * 3
 
 function mode_classic.tp_player_near_flag(player)
 	local tname = ctf_teams.get(player)
@@ -48,6 +48,74 @@ function mode_classic.celebrate_team(teamname)
 	end
 end
 
+local function insert_team_totals(match_rankings, total)
+	if not match_rankings then return {} end
+
+	local ranks = table.copy(match_rankings)
+
+	for team, rank_values in pairs(total) do
+		rank_values._special_row = true
+		rank_values._row_color = ctf_teams.team[team].color
+
+		-- There will be problems with this if player names can contain spaces
+		ranks[HumanReadable("team "..team)] = rank_values
+	end
+
+	return ranks
+end
+
+-- Returns true if player was in combat mode
+local function end_combat_mode(player, killer)
+	local victim_combat_mode = ctf_combat_mode.get(player)
+
+	if not victim_combat_mode then return end
+
+	if killer ~= player then
+		local killscore = rankings.calculate_killscore(player)
+		local attackers = {}
+
+		-- populate attackers table
+		ctf_combat_mode.manage_extra(player, function(pname, type)
+			if type == "hitter" then
+				table.insert(attackers, pname)
+			else
+				return type
+			end
+		end)
+
+		if killer then
+			rankings.add(killer, {kills = 1, score = killscore})
+
+			-- share kill score with healers
+			ctf_combat_mode.manage_extra(killer, function(pname, type)
+				if type == "healer" then
+					rankings.add(pname, {score = killscore})
+				end
+
+				return type
+			end)
+		else
+			-- Only take score for suicide if they're in combat for being healed
+			if victim_combat_mode and #attackers >= 1 then
+				rankings.add(player, {score = -math.ceil(killscore/2)})
+			end
+
+			ctf_kill_list.add_kill("", "ctf_modebase_skull.png", player)
+		end
+
+		for _, pname in pairs(attackers) do
+			if not killer or pname ~= killer:get_player_name() then
+				rankings.add(pname, {kill_assists = 1, score = math.ceil(killscore / #attackers)})
+			end
+		end
+	end
+
+	ctf_combat_mode.remove(player)
+
+	return true
+end
+
+local flag_captured = false
 local next_team = "red"
 ctf_modebase.register_mode("classic", {
 	map_whitelist = {"bridge", "caverns", "coast", "iceage", "two_hills", "plains", "desert_spikes"},
@@ -73,17 +141,19 @@ ctf_modebase.register_mode("classic", {
 		["ctf_ranged:smg_loaded"    ] = {rarity = 0.05                },
 
 		["ctf_ranged:ammo"     ] = {min_count = 3, max_count = 10, rarity = 0.3 , max_stacks = 2},
-		["default:apple"       ] = {min_count = 5, max_count = 30, rarity = 0.1 , max_stacks = 2},
+		["default:apple"       ] = {min_count = 5, max_count = 20, rarity = 0.1 , max_stacks = 2},
 		["ctf_healing:bandage" ] = {                               rarity = 0.2 , max_stacks = 1},
 
-		["grenades:frag" ] = {rarity = 0.1, max_stacks = 2},
+		["grenades:frag" ] = {rarity = 0.1, max_stacks = 1},
 		["grenades:smoke"] = {rarity = 0.2, max_stacks = 2},
 	},
 	crafts = crafts,
 	physics = {sneak_glitch = true, new_move = false},
 	commands = {"ctf_start", "rank", "r"},
 	on_new_match = function(mapdef)
-		rankings.reset_recent()
+		rankings.next_match()
+
+		flag_captured = false
 
 		build_timer.start(mapdef)
 
@@ -96,7 +166,7 @@ ctf_modebase.register_mode("classic", {
 	allocate_player = function(player)
 		player = player:get_player_name()
 
-		local total = rankings.get_total()
+		local total = rankings.total()
 		local bscore = (total.blue and total.blue.score) or 0
 		local rscore = (total.red and total.red.score) or 0
 
@@ -130,7 +200,10 @@ ctf_modebase.register_mode("classic", {
 			textures = {"character.png^(ctf_mode_classic_shirt.png^[colorize:"..tcolor..":180)"}
 		})
 
-		rankings.set_summary_row_color(player, tcolor)
+		player:hud_set_hotbar_image("gui_hotbar.png^[colorize:" .. tcolor .. ":128")
+		player:hud_set_hotbar_selected_image("gui_hotbar_selected.png^[multiply:" .. tcolor)
+
+		rankings.set_team(player, teamname)
 
 		ctf_playertag.set(player, ctf_playertag.TYPE_ENTITY)
 
@@ -144,7 +217,7 @@ ctf_modebase.register_mode("classic", {
 	end,
 	on_leaveplayer = function(player)
 		local pname = player:get_player_name()
-		local recent = rankings.get_recent(pname)
+		local recent = rankings.recent()[pname]
 		local count = 0
 
 		for _ in pairs(recent or {}) do
@@ -155,52 +228,32 @@ ctf_modebase.register_mode("classic", {
 			rankings.reset_recent(pname)
 		end
 
+		if end_combat_mode(player) then
+			rankings.add(player, {deaths = 1})
+		end
+
 		flag_huds.untrack_capturer(pname)
 	end,
 	on_dieplayer = function(player, reason)
-		local killscore = rankings.calculate_killscore(player)
-
-		if reason.type == "punch" and reason.object:is_player() then
-			local combat = ctf_combat_mode.get(reason.object)
-
-			rankings.add(reason.object, {kills = 1, score = killscore})
-
-			if combat and combat.extra.healer then
-				rankings.add(combat.extra.healer, {score = math.ceil(killscore/2)})
-			end
+		if reason.type == "punch" and reason.object and reason.object:is_player() then
+			end_combat_mode(player, reason.object)
 		else
-			local combat_mode = ctf_combat_mode.get(player)
+			end_combat_mode(player)
+		end
 
-			if combat_mode and combat_mode.extra.hitter then
-				local hitter_combat = ctf_combat_mode.get(combat_mode.extra.hitter)
-
-				rankings.add(combat_mode.extra.hitter, {kills = 1, score = killscore})
-
-				if hitter_combat and hitter_combat.extra.healer then
-					rankings.add(hitter_combat.extra.healer, {score = math.ceil(killscore/2)})
-				end
-
-				ctf_kill_list.add_kill(combat_mode.extra.hitter, nil, player)
-			else
-				ctf_kill_list.add_kill("", "ctf_modebase_skull.png", player)
+		if ctf_modebase.prep_delayed_respawn(player) then
+			if not build_timer.in_progress() then
+				rankings.add(player, {deaths = 1})
 			end
 		end
-
-		ctf_combat_mode.remove(player)
-
-		if not build_timer.in_progress() then
-			ctf_modebase.prep_delayed_respawn(player)
-		end
-
-		rankings.add(player, {deaths = 1})
 	end,
 	on_respawnplayer = function(player)
 		if not build_timer.in_progress() then
-			local waitpos = player:get_pos()
-
-			waitpos.y = ctf_map.current_map.pos2.y + 5
-
 			if ctf_modebase.delay_respawn(player, 7, 4) then
+				return true
+			end
+		else
+			if ctf_modebase.delay_respawn(player, 3) then
 				return true
 			end
 		end
@@ -236,7 +289,10 @@ ctf_modebase.register_mode("classic", {
 		ctf_playertag.set(minetest.get_player_by_name(player), ctf_playertag.TYPE_ENTITY)
 	end,
 	on_flag_capture = function(player, captured_team)
-		mode_classic.celebrate_team(ctf_teams.get(player))
+		local pteam = ctf_teams.get(player)
+		mode_classic.celebrate_team(pteam)
+
+		flag_captured = true
 
 		flag_huds.update()
 
@@ -247,7 +303,16 @@ ctf_modebase.register_mode("classic", {
 		for _, pname in pairs(minetest.get_connected_players()) do
 			pname = pname:get_player_name()
 
-			ctf_modebase.show_summary_gui(pname, rankings.get_recent(), mode_classic.SUMMARY_RANKS, {previous = true})
+			ctf_modebase.show_summary_gui(
+				pname,
+				insert_team_totals(rankings.recent(), rankings.total()),
+				mode_classic.SUMMARY_RANKS,
+				{
+					title = HumanReadable(pteam).." Team Wins!",
+					special_row_title = "Total Team Score",
+					buttons = {previous = true}
+				}
+			)
 		end
 
 		ctf_playertag.set(minetest.get_player_by_name(player), ctf_playertag.TYPE_ENTITY)
@@ -257,24 +322,44 @@ ctf_modebase.register_mode("classic", {
 	get_chest_access = function(pname)
 		local rank = rankings.get(pname)
 
-		if not rank or not rank.score then return end
-
-		if rank.score >= 10000 then
-			return "pro"
-		elseif rank.score >= 10 then
-			return true
+		-- Remember to update /makepro in rankings.lua if you change anything here
+		if rank then
+			if (rank.score or 0) >= 10000 and (rank.kills or 0) / (rank.deaths or 0) >= 1.5 then
+				return true, true
+			elseif (rank.score or 0) >= 10 then
+				return true, "You need to have more than 1.5 kills per death, and at least 10,000 score to access the pro section"
+			end
 		end
+
+		return "You need at least 10 score to access this chest",
+		       "You need to have more kills than deaths, and at least 10000 score to access the pro section"
 	end,
 	summary_func = function(name, param)
 		if not param or param == "" then
-			return true, rankings.get_recent() or {}, mode_classic.SUMMARY_RANKS, {previous = true}
+			return true, insert_team_totals(
+				rankings.recent(),
+				rankings.total()
+			), mode_classic.SUMMARY_RANKS, {
+				title = "Match Summary",
+				special_row_title = "Total Team Stats",
+				buttons = {previous = true}
+			}
 		elseif param:match("p") then
-			return true, rankings.get_previous_recent() or {}, mode_classic.SUMMARY_RANKS, {next = true}
+			return true, insert_team_totals(
+				rankings.previous_recent(),
+				rankings.previous_total()
+			), mode_classic.SUMMARY_RANKS, {
+				title = "Previous Match Summary",
+				special_row_title = "Total Team Stats",
+				buttons = {next = true}
+			}
 		else
 			return false, "Don't understand param "..dump(param)
 		end
 	end,
 	on_punchplayer = function(player, hitter, ...)
+		if flag_captured then return true end
+
 		if not hitter:is_player() or player:get_hp() <= 0 then return end
 
 		local pname, hname = player:get_player_name(), hitter:get_player_name()
@@ -297,12 +382,14 @@ ctf_modebase.register_mode("classic", {
 			return true
 		end
 
-		ctf_combat_mode.set(player, 15, {hitter = hitter:get_player_name()})
+		if player ~= hitter then
+			ctf_combat_mode.set(player, 15, {[hitter:get_player_name()] = "hitter"})
+		end
 
 		ctf_kill_list.on_punchplayer(player, hitter, ...)
 	end,
 	on_healplayer = function(player, patient, amount)
-		ctf_combat_mode.set(patient, 15, {healer = player:get_player_name()})
+		ctf_combat_mode.set(patient, 15, {[player:get_player_name()] = "healer"})
 
 		rankings.add(player, {hp_healed = amount}, true)
 	end,
