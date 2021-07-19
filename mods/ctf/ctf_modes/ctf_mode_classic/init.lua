@@ -333,18 +333,19 @@ ctf_modebase.register_mode("classic", {
 	end,
 	get_chest_access = function(pname)
 		local rank = rankings.get(pname)
+		local deny_pro = "You need to have more than 1.5 kills per death, "..
+				"10 captures, and at least 10,000 score to access the pro section"
 
 		-- Remember to update /makepro in rankings.lua if you change anything here
 		if rank then
-			if (rank.score or 0) >= 10000 and (rank.kills or 0) / (rank.deaths or 0) >= 1.5 then
+			if (rank.score or 0) >= 10000 and (rank.kills or 0) / (rank.deaths or 0) >= 1.5 and rank.flag_captures >= 10 then
 				return true, true
 			elseif (rank.score or 0) >= 10 then
-				return true, "You need to have more than 1.5 kills per death, and at least 10,000 score to access the pro section"
+				return true, deny_pro
 			end
 		end
 
-		return "You need at least 10 score to access this chest",
-		       "You need to have more kills than deaths, and at least 10000 score to access the pro section"
+		return "You need at least 10 score to access this chest", deny_pro
 	end,
 	summary_func = function(name, param)
 		if not param or param == "" then
