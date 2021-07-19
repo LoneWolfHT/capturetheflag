@@ -72,7 +72,7 @@ ctf_modebase.register_chatcommand("classic", "makepro", {
 			param = name
 		end
 
-		rankings:set(param, {score = 10000, kills = 15, deaths = 10})
+		rankings:set(param, {score = 10000, kills = 15, deaths = 10, flag_captures = 10})
 
 		return true, "Player "..param.." is now a pro!"
 	end
