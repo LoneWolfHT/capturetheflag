@@ -32,6 +32,7 @@ add_mode_func(ctf_modebase.register_on_new_mode, "on_mode_start", true)
 
 add_mode_func(ctf_modebase.register_on_flag_take    , "on_flag_take"    )
 add_mode_func(ctf_modebase.register_on_flag_drop    , "on_flag_drop"    )
+add_mode_func(ctf_modebase.register_on_flag_rightclick, "on_flag_rightclick")
 add_mode_func(ctf_modebase.register_on_flag_capture , "on_flag_capture" )
 
 add_mode_func(ctf_modebase.register_on_treasurefy_node, "on_treasurefy_node")
