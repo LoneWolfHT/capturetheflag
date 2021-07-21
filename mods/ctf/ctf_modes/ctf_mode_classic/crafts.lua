@@ -1,3 +1,10 @@
+local full_ores = {
+	diamond = "default:diamond",
+	mese = "default:mese_crystal",
+	steel = "default:steel_ingot",
+	stone = "default:cobble",
+}
+
 crafting.register_recipe({
 	type   = "inv",
 	output = "ctf_ranged:ammo",
@@ -6,4 +13,10 @@ crafting.register_recipe({
 	level  = 1,
 })
 
-return {"ctf_ranged:ammo"}
+return {
+	"ctf_ranged:ammo",
+	"default:axe_mese",
+	"default:axe_diamond",
+	"default:shovel_mese",
+	"default:shovel_diamond",
+}
