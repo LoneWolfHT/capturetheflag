@@ -74,3 +74,11 @@ function ctf_modebase.register_on_treasurefy_node(func, load_first)
 	end
 end
 
+ctf_modebase.registered_on_flag_rightclick = {}
+function ctf_modebase.register_on_flag_rightclick(func, load_first)
+	if load_first then
+		table.insert(ctf_modebase.registered_on_flag_rightclick, 1, func)
+	else
+		table.insert(ctf_modebase.registered_on_flag_rightclick, func)
+	end
+end
