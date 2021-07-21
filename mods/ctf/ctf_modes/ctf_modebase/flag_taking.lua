@@ -88,6 +88,10 @@ function ctf_modebase.flag_on_punch(puncher, nodepos, node)
 	end
 end
 
+function ctf_modebase.on_flag_rightclick(...)
+	RunCallbacks(ctf_modebase.registered_on_flag_rightclick, ...)
+end
+
 minetest.register_on_dieplayer(function(player)
 	ctf_modebase.drop_flags(player:get_player_name())
 end)
