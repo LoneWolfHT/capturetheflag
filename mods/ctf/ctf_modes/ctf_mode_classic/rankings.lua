@@ -26,7 +26,17 @@ local rank_def = {
 			return false, string.format("Player %s has no rankings!", target)
 		end
 
-		return true, string.format("Rankings of player %s: %s", target, HumanReadable(dump(prank)))
+		local return_str = string.format("Rankings for player %s:\n\t", minetest.colorize("#ffea00", target))
+
+		for _, rank in ipairs(mode_classic.SUMMARY_RANKS) do
+			return_str = string.format("%s%s: %s,\n\t",
+				return_str,
+				minetest.colorize("#63d437", HumanReadable(rank)),
+				minetest.colorize("#ffea00", prank[rank] or 0)
+			)
+		end
+
+		return true, return_str:sub(1, -3)
 	end
 }
 
@@ -62,7 +72,7 @@ ctf_modebase.register_chatcommand("classic", "makepro", {
 			param = name
 		end
 
-		rankings:set(param, {score = 10000, kills = 15, deaths = 10})
+		rankings:set(param, {score = 10000, kills = 15, deaths = 10, flag_captures = 10})
 
 		return true, "Player "..param.." is now a pro!"
 	end

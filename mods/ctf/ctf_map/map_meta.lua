@@ -56,6 +56,7 @@ function ctf_map.load_map_meta(idx, dirname)
 			phys_gravity  = tonumber(meta:get("phys_gravity")),
 			chests        = {},
 			teams         = {},
+			barrier_area  = {pos1 = pos1, pos2 = pos2}
 		}
 
 		-- Read teams from config
@@ -132,6 +133,7 @@ function ctf_map.load_map_meta(idx, dirname)
 			phys_gravity  = tonumber(meta:get("phys_gravity")),
 			chests        = minetest.deserialize(meta:get("chests")),
 			teams         = minetest.deserialize(meta:get("teams")),
+			barrier_area  = minetest.deserialize(meta:get("barrier_area")),
 		}
 
 		for id, def in pairs(map.chests) do
@@ -144,6 +146,13 @@ function ctf_map.load_map_meta(idx, dirname)
 
 			map.teams[id].pos1 = vector.add(offset, def.pos1)
 			map.teams[id].pos2 = vector.add(offset, def.pos2)
+		end
+
+		if map.barrier_area then
+			map.barrier_area.pos1 = vector.add(offset, map.barrier_area.pos1)
+			map.barrier_area.pos2 = vector.add(offset, map.barrier_area.pos2)
+		else
+			map.barrier_area = {pos1 = map.pos1, pos2 = map.pos2}
 		end
 	end
 
@@ -178,7 +187,7 @@ function ctf_map.save_map(mapmeta)
 			mapmeta.teams[id] = nil
 		else
 			mapmeta.teams[id].flag_pos = vector.subtract(
-				minetest.find_node_near(def.flag_pos, 3, "group:flag_bottom", true),
+				assert(minetest.find_node_near(def.flag_pos, 3, {"group:flag_bottom"}, true), "Failed to find flag for team "..id),
 				mapmeta.offset
 			)
 
@@ -186,6 +195,9 @@ function ctf_map.save_map(mapmeta)
 			mapmeta.teams[id].pos2 = vector.subtract(def.pos2, mapmeta.offset)
 		end
 	end
+
+	mapmeta.barrier_area.pos1 = vector.subtract(mapmeta.barrier_area.pos1, mapmeta.offset)
+	mapmeta.barrier_area.pos2 = vector.subtract(mapmeta.barrier_area.pos2, mapmeta.offset)
 
 	meta:set("map_version"  , CURRENT_MAP_VERSION)
 	meta:set("size"         , minetest.serialize(vector.subtract(mapmeta.pos2, mapmeta.pos1)))
@@ -205,6 +217,7 @@ function ctf_map.save_map(mapmeta)
 	meta:set("phys_gravity" , mapmeta.phys_gravity)
 	meta:set("chests"       , minetest.serialize(mapmeta.chests))
 	meta:set("teams"        , minetest.serialize(mapmeta.teams))
+	meta:set("barrier_area" , minetest.serialize(mapmeta.barrier_area))
 
 	meta:write()
 

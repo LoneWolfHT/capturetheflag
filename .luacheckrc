@@ -3,13 +3,13 @@ unused_args = false
 globals = {
 	"ctf_core", "ctf_map", "ctf_teams", "ctf_modebase", "ctf_gui",
 	"ctf_rankings", "ctf_playertag", "ctf_ranged", "ctf_combat_mode",
-	"ctf_kill_list", "ctf_healing",
+	"ctf_kill_list", "ctf_healing", "ctf_cosmetics",
 
 	"mode_classic",
 
 	"PlayerObj", "PlayerName", "HumanReadable", "RunCallbacks",
 
-	"ChatCmdBuilder", "mhud", "rawf", "chatplus",
+	"chatcmdbuilder", "mhud", "rawf", "chatplus",
 
 	"physics", "give_initial_stuff", "medkits", "grenades", "dropondie",
 	"vote", "random_messages", "sfinv", "email", "hb", "wield3d", "irc",

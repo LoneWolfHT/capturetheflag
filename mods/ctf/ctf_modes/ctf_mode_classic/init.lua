@@ -1,5 +1,12 @@
 mode_classic = {
-	SUMMARY_RANKS = {"flag_captures", _sort = "score", "flag_attempts", "kills", "kill_assists", "deaths", "hp_healed"}
+	SUMMARY_RANKS = {
+		_sort = "score",
+		"score",
+		"flag_captures", "flag_attempts",
+		"kills", "kill_assists",
+		"deaths",
+		"hp_healed"
+	}
 }
 
 local flag_huds, rankings, build_timer, crafts = ctf_core.include_files(
@@ -18,9 +25,9 @@ function mode_classic.tp_player_near_flag(player)
 
 	PlayerObj(player):set_pos(
 		vector.offset(ctf_map.current_map.teams[tname].flag_pos,
-			math.random(-2, 2),
+			math.random(-1, 1),
 			0.5,
-			math.random(-2, 2)
+			math.random(-1, 1)
 		)
 	)
 
@@ -100,7 +107,7 @@ local function end_combat_mode(player, killer)
 				rankings.add(player, {score = -math.ceil(killscore/2)})
 			end
 
-			ctf_kill_list.add_kill("", "ctf_modebase_skull.png", player)
+			ctf_kill_list.add_kill("", "ctf_modebase_skull.png", player) -- suicide
 		end
 
 		for _, pname in pairs(attackers) do
@@ -118,7 +125,10 @@ end
 local flag_captured = false
 local next_team = "red"
 ctf_modebase.register_mode("classic", {
-	map_whitelist = {"bridge", "caverns", "coast", "iceage", "two_hills", "plains", "desert_spikes"},
+	map_whitelist = {
+		"bridge", "caverns", "coast", "iceage", "two_hills", "plains", "desert_spikes",
+		"river_valley",
+	},
 	treasures = {
 		["default:ladder_wood"] = {                max_count = 20, rarity = 0.3, max_stacks = 5},
 		["default:torch" ] = {                max_count = 20, rarity = 0.3, max_stacks = 5},
@@ -132,7 +142,7 @@ ctf_modebase.register_mode("classic", {
 		["default:axe_steel"   ] = {rarity = 0.4, max_stacks = 2},
 
 		["ctf_melee:sword_steel"  ] = {rarity = 0.2  , max_stacks = 2},
-		["ctf_melee:sword_mese"   ] = {rarity = 0.05 , max_stacks = 1},
+		["ctf_melee:sword_mese"   ] = {rarity = 0.01 , max_stacks = 1},
 		["ctf_melee:sword_diamond"] = {rarity = 0.001, max_stacks = 1},
 
 		["ctf_ranged:pistol_loaded" ] = {rarity = 0.2 , max_stacks = 2},
@@ -197,7 +207,7 @@ ctf_modebase.register_mode("classic", {
 		local tcolor = ctf_teams.team[teamname].color
 
 		player:set_properties({
-			textures = {"character.png^(ctf_mode_classic_shirt.png^[colorize:"..tcolor..":180)"}
+			textures = {ctf_cosmetics.get_colored_skin(player, tcolor)}
 		})
 
 		player:hud_set_hotbar_image("gui_hotbar.png^[colorize:" .. tcolor .. ":128")
@@ -238,7 +248,9 @@ ctf_modebase.register_mode("classic", {
 		if reason.type == "punch" and reason.object and reason.object:is_player() then
 			end_combat_mode(player, reason.object)
 		else
-			end_combat_mode(player)
+			if not end_combat_mode(player) then
+				ctf_kill_list.add_kill("", "ctf_modebase_skull.png", player)
+			end
 		end
 
 		if ctf_modebase.prep_delayed_respawn(player) then
@@ -321,18 +333,19 @@ ctf_modebase.register_mode("classic", {
 	end,
 	get_chest_access = function(pname)
 		local rank = rankings.get(pname)
+		local deny_pro = "You need to have more than 1.5 kills per death, "..
+				"10 captures, and at least 10,000 score to access the pro section"
 
 		-- Remember to update /makepro in rankings.lua if you change anything here
 		if rank then
-			if (rank.score or 0) >= 10000 and (rank.kills or 0) / (rank.deaths or 0) >= 1.5 then
+			if (rank.score or 0) >= 10000 and (rank.kills or 0) / (rank.deaths or 0) >= 1.5 and rank.flag_captures >= 10 then
 				return true, true
 			elseif (rank.score or 0) >= 10 then
-				return true, "You need to have more than 1.5 kills per death, and at least 10,000 score to access the pro section"
+				return true, deny_pro
 			end
 		end
 
-		return "You need at least 10 score to access this chest",
-		       "You need to have more kills than deaths, and at least 10000 score to access the pro section"
+		return "You need at least 10 score to access this chest", deny_pro
 	end,
 	summary_func = function(name, param)
 		if not param or param == "" then

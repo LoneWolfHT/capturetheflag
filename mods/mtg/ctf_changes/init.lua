@@ -1,12 +1,13 @@
 local DISALLOW_MOD_ABMS = {"default", "fire", "flowers", "tnt"}
 
 local disabled_ores = {
-	"default:stone_with_copper",
-	"default:stone_with_gold",
+	["default:stone_with_copper"] = "default:stone"          ,
+	["default:stone_with_gold"  ] = "default:stone"          ,
+	["default:stone_with_tin"   ] = "default:stone_with_iron",
 }
 
-for _, ore in pairs(disabled_ores) do
-	minetest.register_alias_force(ore, "default:stone")
+for from, to in pairs(disabled_ores) do
+	minetest.register_alias_force(from, to)
 end
 
 minetest.register_on_mods_loaded(function()
