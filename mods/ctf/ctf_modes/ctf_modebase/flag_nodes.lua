@@ -79,6 +79,8 @@ minetest.register_node("ctf_modebase:flag", {
 	on_rightclick = function(pos, node, clicker)
 		if ctf_core.settings.server_mode == "mapedit" then
 			show_flag_color_form(clicker, vector.offset(pos, 0, 1, 0), node.param2)
+		else
+			ctf_modebase.on_flag_rightclick(pos, node, clicker)
 		end
 	end,
 })
@@ -122,6 +124,8 @@ for name, def in pairs(ctf_teams.team) do
 		on_rightclick = function(pos, node, clicker)
 			if ctf_core.settings.server_mode == "mapedit" then
 				show_flag_color_form(clicker, pos, node.param2)
+			else
+				ctf_modebase.on_flag_rightclick(pos, node, clicker)
 			end
 		end,
 	})
