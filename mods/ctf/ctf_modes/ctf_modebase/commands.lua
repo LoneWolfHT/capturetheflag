@@ -48,3 +48,23 @@ minetest.register_chatcommand("ctf_next", {
 		end
 	end,
 })
+
+minetest.register_chatcommand("list_bounties", {
+	description = "List current bounties",
+	func = function(name)
+		local pteam = ctf_teams.get(name)
+		local output = {}
+
+		for tname, bounty in pairs(ctf_modebase.bounties.bounties) do
+			if pteam ~= tname then
+				table.insert(output, bounty.msg)
+			end
+		end
+
+		if #output <= 0 then
+			return false, "There are no bounties you can claim"
+		end
+
+		return true, table.concat(output, "\n")
+	end
+})

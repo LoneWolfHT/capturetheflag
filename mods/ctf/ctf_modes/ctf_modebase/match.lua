@@ -117,9 +117,11 @@ function ctf_modebase.start_new_match(show_form, new_mode, specific_map)
 		ctf_modebase.place_map(new_mode or ctf_modebase.current_mode, specific_map, function(map)
 			give_initial_stuff.reset_stuff_providers()
 
-			give_initial_stuff.register_stuff_provider(function()
-				return map.initial_stuff or {}
-			end)
+			if map.initial_stuff then
+				give_initial_stuff.register_stuff_provider(function()
+					return map.initial_stuff
+				end)
+			end
 
 			RunCallbacks(ctf_modebase.registered_on_new_match, map, old_map)
 

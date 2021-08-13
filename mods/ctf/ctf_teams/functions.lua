@@ -4,7 +4,7 @@
 
 ---@param player string | ObjectRef
 ---@param teamname string | nil
-function ctf_teams.set_team(player, teamname)
+function ctf_teams.set(player, teamname)
 	player = PlayerName(player)
 
 	if not teamname then
@@ -68,7 +68,7 @@ function ctf_teams.default_allocate_player(player)
 	player = PlayerName(player)
 
 	if not ctf_teams.remembered_player[player] then
-		ctf_teams.set_team(player, ctf_teams.current_team_list[tpos])
+		ctf_teams.set(player, ctf_teams.current_team_list[tpos])
 
 		if tpos >= #ctf_teams.current_team_list then
 			tpos = 1
@@ -76,7 +76,7 @@ function ctf_teams.default_allocate_player(player)
 			tpos = tpos + 1
 		end
 	else
-		ctf_teams.set_team(player, ctf_teams.remembered_player[player])
+		ctf_teams.set(player, ctf_teams.remembered_player[player])
 	end
 end
 ctf_teams.allocate_player = ctf_teams.default_allocate_player
@@ -84,7 +84,7 @@ ctf_teams.allocate_player = ctf_teams.default_allocate_player
 function ctf_teams.dealloc_player(player)
 	RunCallbacks(ctf_teams.registered_on_deallocplayer, PlayerObj(player), ctf_teams.get(player))
 
-	ctf_teams.set_team(player, nil)
+	ctf_teams.set(player, nil)
 end
 
 ---@param teams table
@@ -119,4 +119,16 @@ function ctf_teams.get_team_territory(teamname)
 	if not current_map then return false end
 
 	return current_map.teams[teamname].pos1, current_map.teams[teamname].pos2
+end
+
+---@param teamname string Name of team
+---@param message string message to send
+--- Like `minetest.chat_send_player()` but sends to all members of the given team
+function ctf_teams.chat_send_team(teamname, message)
+	assert(teamname and message, "Incorrect usage of chat_send_team()")
+	local members = ctf_teams.get_team(teamname)
+
+	for _, player in pairs(members) do
+		minetest.chat_send_player(player, message)
+	end
 end

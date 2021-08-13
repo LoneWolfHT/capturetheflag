@@ -169,12 +169,6 @@ return {
 
 		return (specific and rank[specific]) or rank
 	end,
-	calculate_killscore = function(player)
-		local match_rank = rankings.recent[PlayerName(player)] or {}
-		local kd = (match_rank.kills or 1) / (match_rank.deaths or 1)
-
-		return math.round(kd * 5)
-	end,
 	reset_recent = function(player)
 		rankings.recent[player] = nil
 	end,

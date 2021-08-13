@@ -12,7 +12,7 @@ cmd:sub("set :player:username :team", function(name, player, team)
 			return false, "Unable to find team " .. dump(team)
 		end
 
-		ctf_teams.set_team(player, team)
+		ctf_teams.set(player, team)
 
 		return true, string.format("Allocated %s to team %s", player, team)
 	else
@@ -27,7 +27,7 @@ cmd:sub("rset :pattern :team", function(name, pattern, team)
 		local pname = player:get_player_name()
 
 		if pname:match(pattern) then
-			if ctf_teams.set_team(player, team) then
+			if ctf_teams.set(player, team) then
 				table.insert(added, pname)
 			end
 		end

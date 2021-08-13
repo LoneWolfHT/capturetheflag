@@ -3,7 +3,7 @@ mode_classic = {
 		_sort = "score",
 		"score",
 		"flag_captures", "flag_attempts",
-		"kills", "kill_assists",
+		"kills", "kill_assists", "bounty_kills",
 		"deaths",
 		"hp_healed"
 	}
@@ -16,7 +16,23 @@ local flag_huds, rankings, build_timer, crafts = ctf_core.include_files(
 	"crafts.lua"
 )
 
+local function BOUNTY_REWARD_FUNC(pname, pteam)
+	local match_rank = rankings.recent()[pname] or {}
+	local kd = (match_rank.kills or 1) / (match_rank.deaths or 1)
+
+	return {bounty_kills = 1, score = math.max(0, math.min(500, kd * 50))}
+end
+
 local FLAG_CAPTURE_TIMER = 60 * 3
+
+local function calculate_killscore(player)
+	local pname = PlayerName(player)
+	local match_rank = rankings.recent()[pname] or {}
+	local kd = (match_rank.kills or 1) / (match_rank.deaths or 1)
+	local bounty_reward = ctf_modebase.bounties:player_has(pname)
+
+	return math.round(kd * 5) + (bounty_reward and bounty_reward.score or 0)
+end
 
 function mode_classic.tp_player_near_flag(player)
 	local tname = ctf_teams.get(player)
@@ -78,7 +94,7 @@ local function end_combat_mode(player, killer)
 	if not victim_combat_mode then return end
 
 	if killer ~= player then
-		local killscore = rankings.calculate_killscore(player)
+		local killscore = calculate_killscore(player)
 		local attackers = {}
 
 		-- populate attackers table
@@ -91,7 +107,20 @@ local function end_combat_mode(player, killer)
 		end)
 
 		if killer then
-			rankings.add(killer, {kills = 1, score = killscore})
+			local rewards = {kills = 1, score = killscore}
+			local bounty = ctf_modebase.bounties:player_has(player)
+
+			if bounty then
+				bounty.score = nil
+
+				for name, amount in pairs(bounty) do
+					rewards[name] = amount
+				end
+
+				ctf_modebase.bounties:remove(player)
+			end
+
+			rankings.add(killer, rewards)
 
 			-- share kill score with healers
 			ctf_combat_mode.manage_extra(killer, function(pname, type)
@@ -160,6 +189,23 @@ ctf_modebase.register_mode("classic", {
 	crafts = crafts,
 	physics = {sneak_glitch = true, new_move = false},
 	commands = {"ctf_start", "rank", "r"},
+	on_mode_start = function()
+		ctf_modebase.bounties.get_next_bounty = function(team_members)
+			local best_kd = {amount = 0}
+			local recent = rankings.recent()
+
+			for _, pname in pairs(team_members) do
+				local kd = (recent[pname].kills or 1) / (recent[pname].deaths or 1)
+
+				if kd > best_kd.amount then
+					best_kd.amount = kd
+					best_kd.name = pname
+				end
+			end
+
+			return best_kd.name
+		end
+	end,
 	on_new_match = function(mapdef)
 		rankings.next_match()
 
@@ -182,24 +228,24 @@ ctf_modebase.register_mode("classic", {
 
 		if math.abs(bscore - rscore) <= 100 then
 			if not ctf_teams.remembered_player[player] then
-				ctf_teams.set_team(player, next_team)
+				ctf_teams.set(player, next_team)
 				next_team = next_team == "red" and "blue" or "red"
 			else
-				ctf_teams.set_team(player, ctf_teams.remembered_player[player])
+				ctf_teams.set(player, ctf_teams.remembered_player[player])
 			end
 		elseif bscore > rscore then
 			-- Only allocate player to remembered team if they aren't desperately needed in the other
 			if ctf_teams.remembered_player[player] and bscore - rscore < 500 then
-				ctf_teams.set_team(player, ctf_teams.remembered_player[player])
+				ctf_teams.set(player, ctf_teams.remembered_player[player])
 			else
-				ctf_teams.set_team(player, "red")
+				ctf_teams.set(player, "red")
 			end
 		else
 			-- Only allocate player to remembered team if they aren't desperately needed in the other
 			if ctf_teams.remembered_player[player] and rscore - bscore < 500 then
-				ctf_teams.set_team(player, ctf_teams.remembered_player[player])
+				ctf_teams.set(player, ctf_teams.remembered_player[player])
 			else
-				ctf_teams.set_team(player, "blue")
+				ctf_teams.set(player, "blue")
 			end
 		end
 	end,
@@ -224,9 +270,12 @@ ctf_modebase.register_mode("classic", {
 		give_initial_stuff(player)
 
 		flag_huds.on_allocplayer(player)
+
+		ctf_modebase.bounties:update_team_bounties(teamname, BOUNTY_REWARD_FUNC)
 	end,
 	on_leaveplayer = function(player)
 		local pname = player:get_player_name()
+		local pteam = ctf_teams.get(pname)
 		local recent = rankings.recent()[pname]
 		local count = 0
 
@@ -243,6 +292,12 @@ ctf_modebase.register_mode("classic", {
 		end
 
 		flag_huds.untrack_capturer(pname)
+
+		ctf_modebase.bounties:remove(pname)
+
+		if pteam then
+			ctf_modebase.bounties:update_team_bounties(pteam, BOUNTY_REWARD_FUNC, pname)
+		end
 	end,
 	on_dieplayer = function(player, reason)
 		if reason.type == "punch" and reason.object and reason.object:is_player() then

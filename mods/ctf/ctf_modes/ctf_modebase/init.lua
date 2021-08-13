@@ -40,15 +40,17 @@ ctf_core.include_files(
 	"treasure.lua",
 	"register.lua",
 	"commands.lua",
-	"flag_nodes.lua",
+	"flags/nodes.lua",
+	"flags/taking.lua",
 	"match.lua",
-	"flag_taking.lua",
 	"mode_functions.lua",
 	"crafting.lua",
 	"hpregen.lua",
 	"respawn_delay.lua",
 	"markers.lua"
 )
+
+ctf_modebase.bounties = ctf_core.include_files("bounties.lua")
 
 if ctf_core.settings.server_mode == "play" then
 	local match_started = false
