@@ -13,6 +13,7 @@ function ctf_map.show_map_editor(player)
 	table.sort(dirlist_sorted)
 
 	ctf_gui.show_formspec(player, "ctf_map:start", {
+		size = {x = 8, y = 8},
 		title = "Capture The Flag Map Editor",
 		description = "Would you like to edit an existing map or create a new one?",
 		privs = {ctf_map_editor = true},
@@ -64,6 +65,7 @@ function ctf_map.show_map_editor(player)
 
 					minetest.after(0.1, function()
 						ctf_gui.show_formspec(pname, "ctf_map:loading", {
+							size = {x = 6, y = 4},
 							title = "Capture The Flag Map Editor",
 							description = "Placing map '"..fields.currentmaps.."'. This will take a few seconds..."
 						})
@@ -101,8 +103,8 @@ function ctf_map.show_map_editor(player)
 			},
 			currentmaps = {
 				type = "dropdown",
-				pos = {"center", 1.9 + ctf_gui.ELEM_SIZE[2]},
-				size = {5, ctf_gui.ELEM_SIZE[2]},
+				pos = {"center", 1.9 + ctf_gui.ELEM_SIZE.y},
+				size = {5, ctf_gui.ELEM_SIZE.y},
 				items = dirlist_sorted,
 			},
 		}
@@ -138,7 +140,7 @@ function ctf_map.show_map_save_form(player, scroll_pos)
 		label = "Corners - " .. minetest.pos_to_string(context[player].pos1, 0) ..
 				" - " .. minetest.pos_to_string(context[player].pos2, 0),
 		pos = {0, 0.5},
-		size = {10 - (ctf_gui.SCROLLBAR_WIDTH + 0.1), ctf_gui.ELEM_SIZE[2]},
+		size = {10 - (ctf_gui.SCROLLBAR_WIDTH + 0.1), ctf_gui.ELEM_SIZE.y},
 		func = function(pname)
 			ctf_map.get_pos_from_player(pname, 2, function(p, positions)
 				context[p].pos1 = positions[1]
@@ -198,7 +200,7 @@ function ctf_map.show_map_save_form(player, scroll_pos)
 	elements.skybox = {
 		type = "dropdown",
 		pos = {0, 15.6},
-		size = {6, ctf_gui.ELEM_SIZE[2]},
+		size = {6, ctf_gui.ELEM_SIZE.y},
 		items = ctf_map.skyboxes,
 		default_idx = table.indexof(ctf_map.skyboxes, context[player].skybox),
 		func = function(pname, fields, name)
@@ -277,8 +279,8 @@ function ctf_map.show_map_save_form(player, scroll_pos)
 			type = "button",
 			exit = true,
 			label = "Set Flag Pos: " .. minetest.pos_to_string(def.flag_pos),
-			pos = {0.2, idx-(ctf_gui.ELEM_SIZE[2]/2)},
-			size = {5, ctf_gui.ELEM_SIZE[2]},
+			pos = {0.2, idx-(ctf_gui.ELEM_SIZE.y/2)},
+			size = {5, ctf_gui.ELEM_SIZE.y},
 			func = function(pname, fields)
 					ctf_map.get_pos_from_player(pname, 1, function(name, positions)
 						local p = positions[1]
@@ -296,8 +298,8 @@ function ctf_map.show_map_save_form(player, scroll_pos)
 			type = "button",
 			exit = true,
 			label = "Go to pos",
-			pos = {0.2 + 5 + 0.1, idx-(ctf_gui.ELEM_SIZE[2]/2)},
-			size = {2, ctf_gui.ELEM_SIZE[2]},
+			pos = {0.2 + 5 + 0.1, idx-(ctf_gui.ELEM_SIZE.y/2)},
+			size = {2, ctf_gui.ELEM_SIZE.y},
 			func = function(pname)
 				PlayerObj(pname):set_pos(context[pname].teams[teamname].flag_pos)
 			end,
@@ -309,8 +311,8 @@ function ctf_map.show_map_save_form(player, scroll_pos)
 			type = "button", exit = true,
 			label = "Zone Bounds - " .. minetest.pos_to_string(context[player].teams[teamname].pos1, 0) ..
 					" - " .. minetest.pos_to_string(context[player].teams[teamname].pos2, 0),
-			pos = {0.2, idx-(ctf_gui.ELEM_SIZE[2]/2)},
-			size = {9 - (ctf_gui.SCROLLBAR_WIDTH + 0.1), ctf_gui.ELEM_SIZE[2]},
+			pos = {0.2, idx-(ctf_gui.ELEM_SIZE.y/2)},
+			size = {9 - (ctf_gui.SCROLLBAR_WIDTH + 0.1), ctf_gui.ELEM_SIZE.y},
 			func = function(pname)
 				ctf_map.get_pos_from_player(pname, 2, function(p, positions)
 					context[pname].teams[teamname].pos1 = positions[1]
@@ -326,7 +328,7 @@ function ctf_map.show_map_save_form(player, scroll_pos)
 		type = "button",
 		exit = true,
 		label = "Add Chest Zone",
-		pos = {(5 - 0.2) - (ctf_gui.ELEM_SIZE[1] / 2), idx},
+		pos = {(5 - 0.2) - (ctf_gui.ELEM_SIZE.x / 2), idx},
 		func = function(pname)
 			table.insert(context[pname].chests, {
 				pos1 = vector.new(),
@@ -348,7 +350,7 @@ function ctf_map.show_map_save_form(player, scroll_pos)
 				label = "Chest Zone "..id.." - "..minetest.pos_to_string(def.pos1, 0) ..
 						" - "..minetest.pos_to_string(def.pos2, 0),
 				pos = {0, idx},
-				size = {7, ctf_gui.ELEM_SIZE[2]},
+				size = {7, ctf_gui.ELEM_SIZE.y},
 				func = function(pname, fields)
 					if not context[pname].chests[id] then return end
 
@@ -366,7 +368,7 @@ function ctf_map.show_map_save_form(player, scroll_pos)
 				type = "field",
 				label = "Amount",
 				pos = {7.2, idx},
-				size = {1, ctf_gui.ELEM_SIZE[2]},
+				size = {1, ctf_gui.ELEM_SIZE.y},
 				default = context[player].chests[id].amount,
 				func = function(pname, fields, name)
 					if not context[pname].chests[id] then return end
@@ -382,7 +384,7 @@ function ctf_map.show_map_save_form(player, scroll_pos)
 				exit = true,
 				label = "X",
 				pos = {8.4, idx},
-				size = {ctf_gui.ELEM_SIZE[2], ctf_gui.ELEM_SIZE[2]},
+				size = {ctf_gui.ELEM_SIZE.y, ctf_gui.ELEM_SIZE.y},
 				func = function(pname, fields)
 					table.remove(context[pname].chests, id)
 					minetest.after(0.1, function()
@@ -400,7 +402,7 @@ function ctf_map.show_map_save_form(player, scroll_pos)
 		label = "Barrier Area - " .. minetest.pos_to_string(context[player].barrier_area.pos1, 0) ..
 				" - " .. minetest.pos_to_string(context[player].barrier_area.pos2, 0),
 		pos = {0, idx},
-		size = {9 - (ctf_gui.SCROLLBAR_WIDTH + 0.1), ctf_gui.ELEM_SIZE[2]},
+		size = {9 - (ctf_gui.SCROLLBAR_WIDTH + 0.1), ctf_gui.ELEM_SIZE.y},
 		func = function(pname)
 			ctf_map.get_pos_from_player(pname, 2, function(p, positions)
 				context[pname].barrier_area.pos1 = positions[1]
@@ -414,7 +416,7 @@ function ctf_map.show_map_save_form(player, scroll_pos)
 	elements.finishediting = {
 		type = "button",
 		exit = true,
-		pos = {(5 - 0.2) - (ctf_gui.ELEM_SIZE[1] / 2), idx},
+		pos = {(5 - 0.2) - (ctf_gui.ELEM_SIZE.x / 2), idx},
 		label = "Finish Editing",
 		func = function(pname)
 			minetest.after(0.1, function()

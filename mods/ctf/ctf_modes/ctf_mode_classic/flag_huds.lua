@@ -115,6 +115,8 @@ return {
 	end,
 	untrack_capturer = untrack_capturer,
 	clear_capturers = function()
+		if not player_timers then return end
+
 		for pname in pairs(player_timers) do
 			untrack_capturer(pname)
 		end

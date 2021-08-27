@@ -209,6 +209,8 @@ ctf_modebase.register_mode("classic", {
 	on_new_match = function(mapdef)
 		rankings.next_match()
 
+		flag_huds.clear_capturers()
+
 		flag_captured = false
 
 		build_timer.start(mapdef)

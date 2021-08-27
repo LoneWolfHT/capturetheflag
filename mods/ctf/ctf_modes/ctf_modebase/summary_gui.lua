@@ -71,7 +71,7 @@ function ctf_modebase.show_summary_gui(name, rankings, rank_values, formdef)
 			rankings = {
 				type = "table",
 				pos = {"center", 0},
-				size = {ctf_gui.FORM_SIZE[1]-1, ctf_gui.FORM_SIZE[2] - (ctf_gui.ELEM_SIZE[2] + 3)},
+				size = {ctf_gui.FORM_SIZE.x-1, ctf_gui.FORM_SIZE.y - (ctf_gui.ELEM_SIZE.y + 3)},
 				options = {
 					highlight = "#00000000",
 				},
@@ -90,7 +90,7 @@ function ctf_modebase.show_summary_gui(name, rankings, rank_values, formdef)
 			next = formdef.buttons.next and {
 				type = "button",
 				label = "See Current",
-				pos = {"center", ctf_gui.FORM_SIZE[2] - (ctf_gui.ELEM_SIZE[2] + 2.5)},
+				pos = {"center", ctf_gui.FORM_SIZE.y - (ctf_gui.ELEM_SIZE.y + 2.5)},
 				func = function(playername, fields, field_name)
 					local current_mode = ctf_modebase:get_current_mode()
 
@@ -106,7 +106,7 @@ function ctf_modebase.show_summary_gui(name, rankings, rank_values, formdef)
 			previous = formdef.buttons.previous and {
 				type = "button",
 				label = "See Previous",
-				pos = {"center", ctf_gui.FORM_SIZE[2] - (ctf_gui.ELEM_SIZE[2] + 2.5)},
+				pos = {"center", ctf_gui.FORM_SIZE.y - (ctf_gui.ELEM_SIZE.y + 2.5)},
 				func = function(playername, fields, field_name)
 					local current_mode = ctf_modebase:get_current_mode()
 

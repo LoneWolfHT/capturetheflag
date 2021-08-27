@@ -167,6 +167,7 @@ function ctf_modebase.show_modechoose_form(player)
 	end
 
 	ctf_gui.show_formspec(player, "ctf_modebase:mode_select", {
+		size = {x = 8, y = 8},
 		title = "Mode Selection",
 		description = "Please vote on what gamemode you would like to play",
 		on_quit = function(pname)

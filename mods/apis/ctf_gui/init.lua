@@ -1,7 +1,7 @@
 ctf_gui = {
-	ELEM_SIZE = {3, 0.7},
+	ELEM_SIZE = {x = 3, y = 0.7},
 	SCROLLBAR_WIDTH = 0.6,
-	FORM_SIZE = {18, 12},
+	FORM_SIZE = {x = 18, y = 12},
 }
 
 local context = {}
@@ -48,21 +48,28 @@ function ctf_gui.show_formspec(player, formname, formdef)
 
 	formdef.formname = formname
 
+	if not formdef.size then
+		formdef.size = ctf_gui.FORM_SIZE
+	end
+
 	local maxyscroll = 0
 	local formspec = "formspec_version[4]" ..
-			string.format("size[%f,%f]", ctf_gui.FORM_SIZE[1], ctf_gui.FORM_SIZE[2]) ..
-				"hypertext[0,0.2;"..ctf_gui.FORM_SIZE[1]-ctf_gui.SCROLLBAR_WIDTH..
+			string.format("size[%f,%f]", formdef.size.x, formdef.size.y) ..
+				"hypertext[0,0.2;"..formdef.size.x..
 					",1.6;title;<center><big>"..formdef.title.."</big>\n" ..
 					(formdef.description or "\b") .."</center>]" ..
-				"scroll_container[0.1,1.8;"..ctf_gui.FORM_SIZE[1]-ctf_gui.SCROLLBAR_WIDTH..
-				","..ctf_gui.FORM_SIZE[2]..";formcontent;vertical]"
+				"scroll_container[0.1,1.8;"..formdef.size.x..
+				","..formdef.size.y..";formcontent;vertical]"
 
 	local using_scrollbar = false
 	if formdef.elements then
 		for _, def in pairs(formdef.elements) do
 			if def.pos then
-				if def.pos[2] > maxyscroll then
-					maxyscroll = def.pos[2]
+				if not def.pos.x then def.pos.x = def.pos[1] end
+				if not def.pos.y then def.pos.y = def.pos[2] end
+
+				if def.pos.y > maxyscroll then
+					maxyscroll = def.pos.y
 				end
 			end
 		end
@@ -75,13 +82,13 @@ function ctf_gui.show_formspec(player, formname, formdef)
 			if not def.size then
 				def.size = ctf_gui.ELEM_SIZE
 			else
-				if not def.size[1] then def.size[1] = ctf_gui.ELEM_SIZE[1] end
-				if not def.size[2] then def.size[2] = ctf_gui.ELEM_SIZE[2] end
+				if not def.size.x then def.size.x = def.size[1] or ctf_gui.ELEM_SIZE.x end
+				if not def.size.y then def.size.y = def.size[2] or ctf_gui.ELEM_SIZE.y end
 			end
 
 
-			if def.pos[1] == "center" then
-				def.pos[1] = ( (ctf_gui.FORM_SIZE[1]-(using_scrollbar and ctf_gui.SCROLLBAR_WIDTH or 0)) - def.size[1] )/2
+			if def.pos.x == "center" then
+				def.pos.x = ( (formdef.size.x-(using_scrollbar and ctf_gui.SCROLLBAR_WIDTH or 0)) - def.size.x )/2
 			end
 
 			if def.type == "label" then
@@ -90,18 +97,18 @@ function ctf_gui.show_formspec(player, formname, formdef)
 						"style[%s;border=false]" ..
 						"button[%f,%d;%f,%f;%s;%s]",
 						id,
-						def.pos[1],
-						def.pos[2],
-						def.size[1],
-						def.size[2],
+						def.pos.x,
+						def.pos.y,
+						def.size.x,
+						def.size.y,
 						id,
 						minetest.formspec_escape(def.label)
 					)
 				else
 					formspec = formspec .. string.format(
 						"label[%f,%f;%s]",
-						def.pos[1],
-						def.pos[2],
+						def.pos.x,
+						def.pos.y,
 						minetest.formspec_escape(def.label)
 					)
 				end
@@ -111,10 +118,10 @@ function ctf_gui.show_formspec(player, formname, formdef)
 					"field[%f,%f;%f,%f;%s;%s;%s]",
 					id,
 					def.close_on_enter == true and "true" or "false",
-					def.pos[1],
-					def.pos[2],
-					def.size[1],
-					def.size[2],
+					def.pos.x,
+					def.pos.y,
+					def.size.x,
+					def.size.y,
 					id,
 					minetest.formspec_escape(def.label or ""),
 					minetest.formspec_escape(def.default or "")
@@ -123,20 +130,20 @@ function ctf_gui.show_formspec(player, formname, formdef)
 				formspec = formspec .. string.format(
 					"button%s[%f,%f;%f,%f;%s;%s]",
 					def.exit and "_exit" or "",
-					def.pos[1],
-					def.pos[2],
-					def.size[1],
-					def.size[2],
+					def.pos.x,
+					def.pos.y,
+					def.size.x,
+					def.size.y,
 					id,
 					minetest.formspec_escape(def.label)
 				)
 			elseif def.type == "dropdown" then
 				formspec = formspec .. string.format(
 					"dropdown[%f,%f;%f,%f;%s;%s;%d;%s]",
-					def.pos[1],
-					def.pos[2],
-					def.size[1],
-					def.size[2],
+					def.pos.x,
+					def.pos.y,
+					def.size.x,
+					def.size.y,
 					id,
 					table.concat(def.items, ","),
 					def.default_idx or 1,
@@ -145,8 +152,8 @@ function ctf_gui.show_formspec(player, formname, formdef)
 			elseif def.type == "checkbox" then
 				formspec = formspec .. string.format(
 					"checkbox[%f,%f;%s;%s;%s]",
-					def.pos[1],
-					def.pos[2],
+					def.pos.x,
+					def.pos.y,
 					id,
 					minetest.formspec_escape(def.label),
 					def.default or false
@@ -190,10 +197,10 @@ function ctf_gui.show_formspec(player, formname, formdef)
 						) ..
 						string.format(
 							"table[%f,%f;%f,%f;%s;%s;%d]",
-							def.pos[1],
-							def.pos[2],
-							def.size[1],
-							def.size[2],
+							def.pos.x,
+							def.pos.y,
+							def.size.x,
+							def.size.y,
 							id,
 							table.concat(def.rows, ","),
 							def.default_idx or 1
@@ -213,8 +220,8 @@ function ctf_gui.show_formspec(player, formname, formdef)
 
 		formspec = formspec ..
 				"scrollbaroptions[max=" .. (formdef.scrollheight or 500) ..";]" ..
-				"scrollbar["..ctf_gui.FORM_SIZE[1]-(ctf_gui.SCROLLBAR_WIDTH - 0.1) ..
-					",0;"..(ctf_gui.SCROLLBAR_WIDTH - 0.1)..","..ctf_gui.FORM_SIZE[2] ..
+				"scrollbar["..formdef.size.x-(ctf_gui.SCROLLBAR_WIDTH - 0.1) ..
+					",1.8;"..(ctf_gui.SCROLLBAR_WIDTH - 0.1)..","..formdef.size.y - 1.8 ..
 					";vertical;formcontent;" .. formdef.scroll_pos ..
 				"]"
 	end
