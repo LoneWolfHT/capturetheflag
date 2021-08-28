@@ -206,7 +206,7 @@ minetest.register_tool("ctf_mode_classes:support_paxel", {
 		damage_groups = {fleshy=4},
 		punch_attack_uses = 0,
 	},
-	groups = {pickaxe = 1, tier = 2},
+	groups = {pickaxe = 1, tier = 3},
 	sound = {breaks = "default_tool_breaks"},
 })
 
