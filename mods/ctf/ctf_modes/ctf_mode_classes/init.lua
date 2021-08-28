@@ -360,12 +360,7 @@ ctf_modebase.register_mode("classes", {
 		return mode_classes.tp_player_near_flag(player)
 	end,
 	on_flag_rightclick = function(clicker, pos, node)
-		local cteam = ctf_teams.get(clicker)
-
-		-- Check to see if they punched their own flag
-		if cteam and minetest.registered_nodes[node.name].groups[cteam] then
-			classes:show_class_formspec(clicker)
-		end
+		classes:show_class_formspec(clicker)
 	end,
 	on_flag_take = function(player, teamname)
 		if build_timer.in_progress() then

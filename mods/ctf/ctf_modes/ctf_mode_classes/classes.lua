@@ -169,16 +169,14 @@ local scaling_def = {
 	sunlight_propagates = true,
 	walkable = false,
 	climbable = true,
-	stack_max = 1,
 	is_ground_content = false,
 	groups = {},
 	sounds = default.node_sound_metal_defaults(),
 	on_place = function(itemstack, placer, pointed_thing, ...)
 		if pointed_thing.type == "node" then
+			itemstack:set_count(2)
 			minetest.item_place(itemstack, placer, pointed_thing, ...)
 		end
-
-		return itemstack
 	end,
 	on_construct = function(pos)
 		minetest.get_node_timer(pos):start(SCALING_TIMEOUT)
@@ -265,8 +263,14 @@ return {
 	end,
 	show_class_formspec = function(self, player)
 		if not cooldowns:get(player) then
+			if mode_classes.dist_from_flag(player) > 5 then
+				minetest.chat_send_player(PlayerName(player), "You can only change class at your flag!")
+				return
+			end
+
 			local classes_elements = {}
 			local idx = 0
+
 
 			for _, cname in ipairs({"knight", "ranged", "support"}) do
 				classes_elements[cname] = {
