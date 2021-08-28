@@ -165,6 +165,7 @@ end
 local flag_captured = false
 local next_team = "red"
 local old_get_next_bounty = ctf_modebase.bounties.get_next_bounty
+local old_get_colored_skin = ctf_cosmetics.get_colored_skin
 ctf_modebase.register_mode("classes", {
 	map_whitelist = {
 		"bridge", "caverns", "coast", "iceage", "two_hills", "plains", "desert_spikes",
@@ -220,9 +221,17 @@ ctf_modebase.register_mode("classes", {
 
 			return best_kd.name
 		end
+
+		ctf_cosmetics.get_colored_skin = function(player, color)
+			local classname = classes.get_name(player)
+
+			return old_get_colored_skin(player, color) .. (classname and "^ctf_mode_classes_"..classname.."_overlay.png" or "")
+		end
 	end,
 	on_mode_end = function()
 		ctf_modebase.bounties.get_next_bounty = old_get_next_bounty
+
+		ctf_cosmetics.get_colored_skin = old_get_colored_skin
 
 		classes.finish()
 	end,
@@ -277,11 +286,6 @@ ctf_modebase.register_mode("classes", {
 	end,
 	on_allocplayer = function(player, teamname)
 		local tcolor = ctf_teams.team[teamname].color
-
-		player:set_properties({
-			textures = {ctf_cosmetics.get_colored_skin(player, tcolor)}
-		})
-
 		player:hud_set_hotbar_image("gui_hotbar.png^[colorize:" .. tcolor .. ":128")
 		player:hud_set_hotbar_selected_image("gui_hotbar_selected.png^[multiply:" .. tcolor)
 

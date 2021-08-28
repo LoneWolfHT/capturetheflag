@@ -4,8 +4,8 @@ local CLASS_SWITCH_COOLDOWN = 30
 local classes = {
 	knight = {
 		name = "Knight",
-		hp_max = 30,
-		visual_size = vector.new(1.1, 1, 1.1),
+		hp_max = 25,
+		visual_size = vector.new(1.1, 1.1, 1.1),
 		items = {
 			"ctf_mode_classes:knight_sword",
 		}
@@ -21,9 +21,11 @@ local classes = {
 	ranged = {
 		name = "Ranged",
 		hp_max = 10,
-		visual_size = vector.new(0.9, 1, 0.9),
+		physics = {speed = 1.2},
+		visual_size = vector.new(0.95, 0.95, 0.95),
 		items = {
 			"ctf_mode_classes:ranged_rifle_loaded",
+			"ctf_mode_classes:scaling_ladder"
 		}
 	}
 }
@@ -151,6 +153,44 @@ ctf_ranged.simple_register_gun("ctf_mode_classes:ranged_rifle", {
 })
 
 --
+--- Scaling Ladder
+--
+
+local SCALING_TIMEOUT = 4
+
+-- Code borrowed from minetest_game default/nodes.lua -> default:ladder_steel
+local scaling_def = {
+	description = "Scaling Ladder (Infinite, self-removes after "..SCALING_TIMEOUT.."s)",
+	drawtype = "glasslike",
+	tiles = {"default_ladder_steel.png"},
+	inventory_image = "default_ladder_steel.png",
+	wield_image = "default_ladder_steel.png",
+	paramtype = "light",
+	sunlight_propagates = true,
+	walkable = false,
+	climbable = true,
+	stack_max = 1,
+	is_ground_content = false,
+	groups = {},
+	sounds = default.node_sound_metal_defaults(),
+	on_place = function(itemstack, placer, pointed_thing, ...)
+		if pointed_thing.type == "node" then
+			minetest.item_place(itemstack, placer, pointed_thing, ...)
+		end
+
+		return itemstack
+	end,
+	on_construct = function(pos)
+		minetest.get_node_timer(pos):start(SCALING_TIMEOUT)
+	end,
+	on_timer = function(pos)
+		minetest.remove_node(pos)
+	end,
+}
+
+minetest.register_node("ctf_mode_classes:scaling_ladder", scaling_def)
+
+--
 --- Medic Paxel
 --
 
@@ -176,11 +216,13 @@ return {
 	finish = function()
 		for _, player in pairs(minetest.get_connected_players()) do
 			player:set_properties({hp_max = minetest.PLAYER_MAX_HP_DEFAULT, visual_size = vector.new(1, 1, 1)})
+			physics.remove(player:get_player_name(), "ctf_mode_classes:class_physics")
 		end
 	end,
 	set = function(player, classname)
 		player = PlayerObj(player)
 		local meta = player:get_meta()
+		local pteam = ctf_teams.get(player)
 
 		if not classname then
 			classname = meta:get_string("class")
@@ -193,11 +235,22 @@ return {
 		meta:set_string("class", classname)
 
 		player:set_properties({
+			textures = {ctf_cosmetics.get_colored_skin(player, pteam and ctf_teams.team[pteam].color or "white")},
 			hp_max = classes[classname].hp_max or minetest.PLAYER_MAX_HP_DEFAULT,
 			visual_size = classes[classname].visual_size or vector.new(1, 1, 1)
 		})
 
 		player:set_hp(classes[classname].hp_max or minetest.PLAYER_MAX_HP_DEFAULT)
+
+		if classes[classname].physics then
+			physics.set(player:get_player_name(), "ctf_mode_classes:class_physics", {
+				speed   = classes[classname].physics.speed or 1,
+				jump    = classes[classname].physics.jump or 1,
+				gravity = classes[classname].physics.gravity or 1,
+			})
+		else
+			physics.remove(player:get_player_name(), "ctf_mode_classes:class_physics")
+		end
 
 		dropondie.drop_all(player)
 		give_initial_stuff(player)
@@ -207,14 +260,15 @@ return {
 
 		return cname and (classes[cname] or {}) or false
 	end,
+	get_name = function(player)
+		return player:get_meta():get_string("class") or false
+	end,
 	show_class_formspec = function(self, player)
 		if not cooldowns:get(player) then
-			cooldowns:set(player, CLASS_SWITCH_COOLDOWN)
-
 			local classes_elements = {}
 			local idx = 0
 
-			for cname in pairs(classes) do
+			for _, cname in ipairs({"knight", "ranged", "support"}) do
 				classes_elements[cname] = {
 					type = "button",
 					exit = true,
@@ -222,6 +276,7 @@ return {
 					pos = {x = "center", y = idx},
 					func = function(playername, fields, field_name)
 						if mode_classes.dist_from_flag(player) <= 5 then
+							cooldowns:set(player, CLASS_SWITCH_COOLDOWN)
 							self.set(player, cname)
 						end
 					end,
