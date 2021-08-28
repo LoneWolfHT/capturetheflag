@@ -54,6 +54,7 @@ ctf_core.include_files(
 )
 
 ctf_modebase.bounties = ctf_core.include_files("bounties.lua")
+ctf_modebase.build_timer = ctf_core.include_files("build_timer.lua")
 
 if ctf_core.settings.server_mode == "play" then
 	local match_started = false

@@ -1,24 +1,27 @@
 local hud = mhud.init()
 
-local BUILD_TIME = 3 * 60
+local DEFAULT_BUILD_TIME = 60 * 3
 
 local target_map
 local timer
 local second_timer = 0
 
 local build_timer = {
-	start = function(mapdef)
-		timer = BUILD_TIME
+	start = function(mapdef, time)
+		timer = time or DEFAULT_BUILD_TIME
 		target_map = mapdef
 	end,
 	in_progress = function()
 		return timer ~= nil
 	end,
-	finish = function()
+	finish = function(ignore_barrier)
 		timer = nil
 
 		if target_map then
-			ctf_map.remove_barrier(target_map)
+			if not ignore_barrier then
+				ctf_map.remove_barrier(target_map)
+			end
+
 			hud:remove_all()
 
 			target_map = nil
@@ -79,13 +82,13 @@ minetest.register_globalstep(function(dtime)
 
 			if not ctf_core.pos_inside(player:get_pos(), ctf_teams.get_team_territory(pteam)) then
 				minetest.chat_send_player(player:get_player_name(), "You can't cross the barrier until build time is over!")
-				mode_classic.tp_player_near_flag(player)
+				player:set_pos(ctf_map.current_map.teams[pteam].flag_pos)
 			end
 		end
 	end
 end)
 
-ctf_modebase.register_chatcommand("classic", "ctf_start", {
+minetest.register_chatcommand("ctf_start", {
 	description = "Skip build time",
 	privs = {ctf_admin = true},
 	func = function(name, param)

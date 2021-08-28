@@ -9,10 +9,9 @@ mode_classic = {
 	}
 }
 
-local flag_huds, rankings, build_timer, crafts = ctf_core.include_files(
+local flag_huds, rankings, crafts = ctf_core.include_files(
 	"flag_huds.lua",
 	"rankings.lua",
-	"build_timer.lua",
 	"crafts.lua"
 )
 
@@ -153,6 +152,7 @@ end
 
 local flag_captured = false
 local next_team = "red"
+local old_get_next_bounty = ctf_modebase.bounties.get_next_bounty
 ctf_modebase.register_mode("classic", {
 	map_whitelist = {
 		"bridge", "caverns", "coast", "iceage", "two_hills", "plains", "desert_spikes",
@@ -206,6 +206,11 @@ ctf_modebase.register_mode("classic", {
 			return best_kd.name
 		end
 	end,
+	on_mode_end = function()
+		ctf_modebase.bounties.get_next_bounty = old_get_next_bounty
+
+		flag_huds.clear_huds()
+	end,
 	on_new_match = function(mapdef)
 		rankings.next_match()
 
@@ -213,7 +218,7 @@ ctf_modebase.register_mode("classic", {
 
 		flag_captured = false
 
-		build_timer.start(mapdef)
+		ctf_modebase.build_timer.start(mapdef)
 
 		give_initial_stuff.register_stuff_provider(function()
 			return {"default:sword_stone", "default:pick_stone", "default:torch 15", "default:stick 5"}
@@ -311,13 +316,13 @@ ctf_modebase.register_mode("classic", {
 		end
 
 		if ctf_modebase.prep_delayed_respawn(player) then
-			if not build_timer.in_progress() then
+			if not ctf_modebase.build_timer.in_progress() then
 				rankings.add(player, {deaths = 1})
 			end
 		end
 	end,
 	on_respawnplayer = function(player)
-		if not build_timer.in_progress() then
+		if not ctf_modebase.build_timer.in_progress() then
 			if ctf_modebase.delay_respawn(player, 7, 4) then
 				return true
 			end
@@ -332,7 +337,7 @@ ctf_modebase.register_mode("classic", {
 		return mode_classic.tp_player_near_flag(player)
 	end,
 	on_flag_take = function(player, teamname)
-		if build_timer.in_progress() then
+		if ctf_modebase.build_timer.in_progress() then
 			mode_classic.tp_player_near_flag(player)
 
 			return "You can't take the enemy flag during build time!"
@@ -447,7 +452,7 @@ ctf_modebase.register_mode("classic", {
 			minetest.chat_send_player(hname, pname .. " is on your team!")
 
 			return true
-		elseif build_timer.in_progress() then
+		elseif ctf_modebase.build_timer.in_progress() then
 			minetest.chat_send_player(hname, "The match hasn't started yet!")
 			return true
 		end

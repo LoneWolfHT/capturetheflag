@@ -4,7 +4,7 @@ local CLASS_SWITCH_COOLDOWN = 30
 local classes = {
 	knight = {
 		name = "Knight",
-		hp_max = 25,
+		hp_max = 26,
 		visual_size = vector.new(1.1, 1.1, 1.1),
 		items = {
 			"ctf_mode_classes:knight_sword",
@@ -71,7 +71,7 @@ end
 --- Knight Sword
 --
 
-local KNIGHT_COOLDOWN_TIME = 40
+local KNIGHT_COOLDOWN_TIME = 42
 local KNIGHT_USAGE_TIME = 12
 
 ctf_melee.simple_register_sword("ctf_mode_classes:knight_sword", {
@@ -130,7 +130,7 @@ ctf_ranged.simple_register_gun("ctf_mode_classes:ranged_rifle", {
 	fire_sound = "ctf_ranged_rifle",
 	rounds = 0,
 	range = 150,
-	damage = 4,
+	damage = 5,
 	fire_interval = 0.8,
 	liquid_travel_dist = 4,
 	rightclick_func = function(itemstack, user, pointed)
@@ -270,7 +270,6 @@ return {
 
 			local classes_elements = {}
 			local idx = 0
-
 
 			for _, cname in ipairs({"knight", "ranged", "support"}) do
 				classes_elements[cname] = {

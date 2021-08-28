@@ -11,10 +11,9 @@ mode_classes = {
 	}
 }
 
-local flag_huds, rankings, build_timer, crafts, classes = ctf_core.include_files(
+local flag_huds, rankings, crafts, classes = ctf_core.include_files(
 	"flag_huds.lua",
 	"rankings.lua",
-	"build_timer.lua",
 	"crafts.lua",
 	"classes.lua"
 )
@@ -233,6 +232,8 @@ ctf_modebase.register_mode("classes", {
 
 		ctf_cosmetics.get_colored_skin = old_get_colored_skin
 
+		flag_huds.clear_huds()
+
 		classes.finish()
 	end,
 	on_new_match = function(mapdef)
@@ -242,7 +243,7 @@ ctf_modebase.register_mode("classes", {
 
 		flag_captured = false
 
-		build_timer.start(mapdef)
+		ctf_modebase.build_timer.start(mapdef, 60 * 1.5)
 
 		give_initial_stuff.register_stuff_provider(function(player)
 			local initial_stuff = classes.get(player).items or {}
@@ -339,13 +340,13 @@ ctf_modebase.register_mode("classes", {
 		end
 
 		if ctf_modebase.prep_delayed_respawn(player) then
-			if not build_timer.in_progress() then
+			if not ctf_modebase.build_timer.in_progress() then
 				rankings.add(player, {deaths = 1})
 			end
 		end
 	end,
 	on_respawnplayer = function(player)
-		if not build_timer.in_progress() then
+		if not ctf_modebase.build_timer.in_progress() then
 			if ctf_modebase.delay_respawn(player, 7, 4) then
 				return true
 			end
@@ -363,7 +364,7 @@ ctf_modebase.register_mode("classes", {
 		classes:show_class_formspec(clicker)
 	end,
 	on_flag_take = function(player, teamname)
-		if build_timer.in_progress() then
+		if ctf_modebase.build_timer.in_progress() then
 			mode_classes.tp_player_near_flag(player)
 
 			return "You can't take the enemy flag during build time!"
@@ -478,7 +479,7 @@ ctf_modebase.register_mode("classes", {
 			minetest.chat_send_player(hname, pname .. " is on your team!")
 
 			return true
-		elseif build_timer.in_progress() then
+		elseif ctf_modebase.build_timer.in_progress() then
 			minetest.chat_send_player(hname, "The match hasn't started yet!")
 			return true
 		end

@@ -163,4 +163,7 @@ return {
 			hud:change(player, "flag_status", get_status(player:get_player_name()))
 		end
 	end,
+	clear_huds = function()
+		hud:clear_all()
+	end,
 }
