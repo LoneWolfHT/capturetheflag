@@ -110,6 +110,10 @@ function ctf_modebase.start_new_match(show_form, new_mode, specific_map)
 		end
 
 		if new_mode then
+			if old_mode and ctf_modebase.modes[old_mode].on_mode_end then
+				ctf_modebase.modes[old_mode].on_mode_end()
+			end
+
 			ctf_modebase.current_mode = new_mode
 			RunCallbacks(ctf_modebase.registered_on_new_mode, new_mode, old_mode)
 		end
@@ -117,13 +121,13 @@ function ctf_modebase.start_new_match(show_form, new_mode, specific_map)
 		ctf_modebase.place_map(new_mode or ctf_modebase.current_mode, specific_map, function(map)
 			give_initial_stuff.reset_stuff_providers()
 
+			RunCallbacks(ctf_modebase.registered_on_new_match, map, old_map)
+
 			if map.initial_stuff then
 				give_initial_stuff.register_stuff_provider(function()
 					return map.initial_stuff
 				end)
 			end
-
-			RunCallbacks(ctf_modebase.registered_on_new_match, map, old_map)
 
 			ctf_teams.allocate_teams(map.teams)
 

@@ -25,6 +25,9 @@ ctf_modebase = {
 	-- taken_flags[Player Name] = list of team names
 	taken_flags          = {},
 
+	-- team_flag_takers[Team name][Player Name] = list of team names
+	team_flag_takers     = {},
+
 	-- flag_taken[Team Name] = Name of thief
 	flag_taken           = {},
 
