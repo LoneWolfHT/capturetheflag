@@ -57,7 +57,7 @@ minetest.register_on_joinplayer(function(player)
 		voters[name] = {choice = false, formname = ctf_modebase.show_modechoose_form(player)}
 	end
 
-	if ctf_modebase.current_mode then
+	if ctf_modebase.current_mode and ctf_map.current_map then
 		local map = ctf_map.current_map
 		local mode_def = ctf_modebase:get_current_mode()
 		skybox.set(player, table.indexof(ctf_map.skyboxes, map.skybox)-1)
