@@ -195,7 +195,7 @@ ctf_modebase.register_mode("classic", {
 			local recent = rankings.recent()
 
 			for _, pname in pairs(team_members) do
-				local kd = (recent[pname].kills or 1) / (recent[pname].deaths or 1)
+				local kd = recent[pname] and (recent[pname].kills or 1) / (recent[pname].deaths or 1) or 1
 
 				if kd > best_kd.amount then
 					best_kd.amount = kd
