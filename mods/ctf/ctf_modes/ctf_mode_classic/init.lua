@@ -19,7 +19,7 @@ local function BOUNTY_REWARD_FUNC(pname, pteam)
 	local match_rank = rankings.recent()[pname] or {}
 	local kd = (match_rank.kills or 1) / (match_rank.deaths or 1)
 
-	return {bounty_kills = 1, score = math.max(0, math.min(500, kd * 50))}
+	return {bounty_kills = 1, score = math.max(0, math.min(500, kd * 40))}
 end
 
 local FLAG_CAPTURE_TIMER = 60 * 3
