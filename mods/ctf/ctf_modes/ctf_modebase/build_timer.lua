@@ -19,6 +19,11 @@ local build_timer = {
 
 		if target_map then
 			if not ignore_barrier then
+				minetest.sound_play("ctf_modebase_build_time_over", {
+					gain = 1.0,
+					pitch = 1.0,
+				}, true)
+
 				ctf_map.remove_barrier(target_map)
 			end
 

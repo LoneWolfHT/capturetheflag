@@ -1,10 +1,12 @@
 local cooldowns = ctf_core.init_cooldowns()
-local CLASS_SWITCH_COOLDOWN = 30
+local CLASS_SWITCH_COOLDOWN = 0
 
+local class_list = {"knight", "ranged", "support"}
 local classes = {
 	knight = {
 		name = "Knight",
-		hp_max = 26,
+		description = "High HP class with a sword capable of strong damage bursts",
+		hp_max = 28,
 		visual_size = vector.new(1.1, 1.1, 1.1),
 		items = {
 			"ctf_mode_classes:knight_sword",
@@ -12,15 +14,17 @@ local classes = {
 	},
 	support = {
 		name = "Support",
+		description = "Normal HP class with healing bandages and building tools",
 		items = {
-			"ctf_healing:bandage",
+			"ctf_mode_classes:support_bandage",
 			"ctf_mode_classes:support_paxel",
 			"default:cobble 99",
 		}
 	},
 	ranged = {
 		name = "Ranged",
-		hp_max = 10,
+		description = "Low HP ranged class with a rifle/grenade launcher gun, and a scaling ladder for reaching high places",
+		hp_max = 12,
 		physics = {speed = 1.2},
 		visual_size = vector.new(0.95, 0.95, 0.95),
 		items = {
@@ -44,7 +48,7 @@ local function update_wear(pname, item, cooldown_time, time_passed, down)
 			for pos, stack in pairs(pinv:get_list("main")) do
 				if stack:get_name() == item then
 					if down then
-						stack:set_wear((65535 / cooldown_time) * time_passed)
+						stack:set_wear((65534 / cooldown_time) * time_passed)
 					else
 						stack:set_wear((65535 / cooldown_time) * (cooldown_time - time_passed))
 					end
@@ -143,8 +147,9 @@ ctf_ranged.simple_register_gun("ctf_mode_classes:ranged_rifle", {
 		if (not pointed or not pointed_nodedef.on_rightclick) and itemstack:get_wear() == 0 then
 			grenades.throw_grenade("grenades:frag", 24, user)
 
-			minetest.after(0, user.set_wielded_item, user, itemstack)
 			itemstack:set_wear(65534)
+			minetest.after(0, user.set_wielded_item, user, itemstack)
+
 			update_wear(user:get_player_name(), "ctf_mode_classes:ranged_rifle_loaded", RANGED_COOLDOWN_TIME, 0)
 		end
 
@@ -161,16 +166,20 @@ local SCALING_TIMEOUT = 4
 -- Code borrowed from minetest_game default/nodes.lua -> default:ladder_steel
 local scaling_def = {
 	description = "Scaling Ladder (Infinite, self-removes after "..SCALING_TIMEOUT.."s)",
-	drawtype = "glasslike",
 	tiles = {"default_ladder_steel.png"},
+	drawtype = "signlike",
 	inventory_image = "default_ladder_steel.png",
 	wield_image = "default_ladder_steel.png",
 	paramtype = "light",
+	paramtype2 = "wallmounted",
 	sunlight_propagates = true,
 	walkable = false,
 	climbable = true,
 	is_ground_content = false,
 	groups = {},
+	selection_box = {
+		type = "wallmounted",
+	},
 	sounds = default.node_sound_metal_defaults(),
 	on_place = function(itemstack, placer, pointed_thing, ...)
 		if pointed_thing.type == "node" then
@@ -208,6 +217,57 @@ minetest.register_tool("ctf_mode_classes:support_paxel", {
 	},
 	groups = {pickaxe = 1, tier = 3},
 	sound = {breaks = "default_tool_breaks"},
+})
+
+--
+--- Medic Bandage
+--
+
+local IMMUNITY_TIME = 6
+local IMMUNITY_COOLDOWN = 46
+local HEAL_PERCENT = 0.8
+
+ctf_healing.register_bandage("ctf_mode_classes:support_bandage", {
+	description = string.format(
+		"Bandage\nHeals teammates for 4-5 HP until target's HP is equal to %d%% of their maximum HP\n" ..
+		"Rightclick to become immune to damage for %ds (%ds cooldown)",
+		HEAL_PERCENT * 100,
+		IMMUNITY_TIME, IMMUNITY_COOLDOWN
+	),
+	inventory_image = "ctf_healing_bandage.png",
+	heal_percent = HEAL_PERCENT,
+	heal_min = 4,
+	heal_max = 5,
+	rightclick_func = function(itemstack, user, pointed)
+		local pointed_nodedef = {}
+		local uname = user:get_player_name()
+
+		if pointed and pointed.type == "node" then
+			pointed_nodedef = minetest.registered_nodes[minetest.get_node(pointed.under).name]
+		end
+
+		if (not pointed or not pointed_nodedef.on_rightclick) and itemstack:get_wear() == 0 then
+			local old_textures = user:get_properties().textures
+
+			user:set_properties({pointable = false, textures = {old_textures[1].."^[brighten"}})
+
+			minetest.after(IMMUNITY_TIME, function()
+				user = minetest.get_player_by_name(uname)
+
+				if user then
+					user:set_properties({pointable = true, textures = old_textures})
+					update_wear(uname, "ctf_mode_classes:support_bandage", IMMUNITY_COOLDOWN, 0)
+				end
+			end)
+
+			itemstack:set_wear(1)
+			minetest.after(0, user.set_wielded_item, user, itemstack)
+
+			update_wear(uname, "ctf_mode_classes:support_bandage", IMMUNITY_TIME, 0, true)
+		end
+
+		minetest.item_place(itemstack, user, pointed)
+	end
 })
 
 return {
@@ -261,42 +321,60 @@ return {
 	get_name = function(player)
 		return player:get_meta():get_string("class") or false
 	end,
-	show_class_formspec = function(self, player)
+	show_class_formspec = function(self, player, selected)
+		player = PlayerObj(player)
+
+		if not selected then
+			selected = self.get_name(player)
+
+			selected = selected and table.indexof(class_list, selected) or 1
+		end
+
 		if not cooldowns:get(player) then
 			if mode_classes.dist_from_flag(player) > 5 then
-				minetest.chat_send_player(PlayerName(player), "You can only change class at your flag!")
+				minetest.chat_send_player(player:get_player_name(), "You can only change class at your flag!")
 				return
 			end
 
-			local classes_elements = {}
-			local idx = 0
+			local elements = {}
 
-			for _, cname in ipairs({"knight", "ranged", "support"}) do
-				classes_elements[cname] = {
-					type = "button",
-					exit = true,
-					label = HumanReadable(cname),
-					pos = {x = "center", y = idx},
-					func = function(playername, fields, field_name)
-						if mode_classes.dist_from_flag(player) <= 5 then
-							cooldowns:set(player, CLASS_SWITCH_COOLDOWN)
-							self.set(player, cname)
-						end
-					end,
-				}
+			elements.class_select = {
+				type = "dropdown",
+				items = {"Knight", "Ranged", "Support"},
+				default_idx = selected,
+				give_idx = true,
+				pos = {x = 0, y = 0.5},
+				func = function(playername, fields, field_name)
+					local new_idx = tonumber(fields[field_name])
 
-				idx = idx + ctf_gui.ELEM_SIZE.y + 0.5
-			end
+					if new_idx ~= selected then
+						self.show_class_formspec(self, playername, new_idx)
+					end
+				end,
+			}
+			elements.select_class = {
+				type = "button",
+				exit = true,
+				label = "Choose Class",
+				pos = {x = ctf_gui.ELEM_SIZE.x + 0.5, y = 0.5},
+				func = function(playername, fields, field_name)
+					if mode_classes.dist_from_flag(player) <= 5 then
+						cooldowns:set(player, CLASS_SWITCH_COOLDOWN)
+						self.set(player, class_list[selected])
+					end
+				end,
+			}
 
 			ctf_gui.show_formspec(player, "ctf_mode_classes:class_form", {
-				size = {x = 6, y = 8},
-				title = "Choose A Class",
+				size = {x = (ctf_gui.ELEM_SIZE.x * 2) + 1, y = 3.5},
+				title = classes[class_list[selected]].name,
+				description = classes[class_list[selected]].description,
 				privs = {interact = true},
-				elements = classes_elements,
+				elements = elements,
 			})
 		else
 			minetest.chat_send_player(
-				PlayerName(player),
+				player:get_player_name(),
 				"You can only change your class every "..CLASS_SWITCH_COOLDOWN.." seconds"
 			)
 		end
