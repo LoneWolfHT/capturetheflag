@@ -24,8 +24,8 @@ local classes = {
 	ranged = {
 		name = "Ranged",
 		description = "Low HP ranged class with a rifle/grenade launcher gun, and a scaling ladder for reaching high places",
-		hp_max = 12,
-		physics = {speed = 1.2},
+		hp_max = 10,
+		physics = {speed = 1.1},
 		visual_size = vector.new(0.95, 0.95, 0.95),
 		items = {
 			"ctf_mode_classes:ranged_rifle_loaded",
@@ -125,7 +125,7 @@ ctf_melee.simple_register_sword("ctf_mode_classes:knight_sword", {
 --- Ranged Gun
 --
 
-local RANGED_COOLDOWN_TIME = 20
+local RANGED_COOLDOWN_TIME = 36
 
 ctf_ranged.simple_register_gun("ctf_mode_classes:ranged_rifle", {
 	type = "rifle",
