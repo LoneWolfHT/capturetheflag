@@ -1,6 +1,7 @@
 local cooldowns = ctf_core.init_cooldowns()
 local CLASS_SWITCH_COOLDOWN = 30
 
+local readable_class_list = {"Knight", "Ranged", "Support"}
 local class_list = {"knight", "ranged", "support"}
 local classes = {
 	knight = {
@@ -340,12 +341,11 @@ return {
 
 			elements.class_select = {
 				type = "dropdown",
-				items = {"Knight", "Ranged", "Support"},
+				items = readable_class_list,
 				default_idx = selected,
-				give_idx = true,
 				pos = {x = 0, y = 0.5},
 				func = function(playername, fields, field_name)
-					local new_idx = tonumber(fields[field_name])
+					local new_idx = table.indexof(readable_class_list, fields[field_name])
 
 					if new_idx ~= selected then
 						self.show_class_formspec(self, playername, new_idx)
