@@ -1,5 +1,6 @@
 local voting = false
 local voters = {}
+local voter_count = 0
 local timer = 0
 
 -- List of all maps placed during the current mode
@@ -18,36 +19,38 @@ minetest.register_globalstep(function(dtime)
 		return
 	end
 
-	local votes = {_most = {c = 0}}
+	if timer <= 0 then
+		local votes = {_most = {c = 0}}
 
-	for _, mode in pairs(ctf_modebase.modelist) do
-		votes[mode] = 0
-	end
+		for _, mode in pairs(ctf_modebase.modelist) do
+			votes[mode] = 0
+		end
 
-	for pname, info in pairs(voters) do
-		if not info.choice and timer > 0 then
-			ctf_modebase.show_modechoose_form(pname)
-		else
-			votes[info.choice] = (votes[info.choice] or 0) + 1
+		for pname, info in pairs(voters) do
+			if not info.choice and timer > 0 then
+				ctf_modebase.show_modechoose_form(pname)
+			else
+				votes[info.choice] = (votes[info.choice] or 0) + 1
 
-			if votes[info.choice] > votes._most.c then
-				votes._most.c = votes[info.choice]
-				votes._most.n = info.choice
+				if votes[info.choice] >= votes._most.c then
+					votes._most.c = votes[info.choice]
+					votes._most.n = info.choice
+				end
 			end
 		end
+
+		voting = false
+		voters = {}
+
+		local new_mode = votes._most.n or ctf_modebase.modelist[math.random(1, #ctf_modebase.modelist)]
+
+		minetest.chat_send_all(string.format("Voting is over, '%s' won with %d votes!",
+			HumanReadable(new_mode),
+			votes._most.c or 0
+		))
+
+		ctf_modebase.start_new_match(nil, new_mode)
 	end
-
-	voting = false
-	voters = {}
-
-	local new_mode = votes._most.n or ctf_modebase.modelist[math.random(1, #ctf_modebase.modelist)]
-
-	minetest.chat_send_all(string.format("Voting is over, '%s' won with %d votes!",
-		HumanReadable(new_mode),
-		votes._most.c or 0
-	))
-
-	ctf_modebase.start_new_match(nil, new_mode)
 end)
 
 minetest.register_on_joinplayer(function(player)
@@ -80,6 +83,7 @@ end)
 minetest.register_on_leaveplayer(function(player)
 	if voting then
 		voters[player:get_player_name()] = nil
+		voter_count = voter_count - 1
 	end
 end)
 
@@ -92,6 +96,7 @@ function ctf_modebase.start_mode_vote()
 
 	timer = ctf_modebase.VOTING_TIME
 	voting = true
+	voter_count = 0
 end
 
 
@@ -159,6 +164,12 @@ function ctf_modebase.show_modechoose_form(player)
 				if voting then
 					if ctf_modebase.modes[modename] then
 						voters[playername].choice = modename
+						voter_count = voter_count + 1
+
+						if voter_count >= #minetest.get_connected_players() then
+							timer = 0
+						end
+
 						minetest.chat_send_all(string.format("%s voted for the mode '%s'", playername, HumanReadable(modename)))
 					else
 						ctf_modebase.show_modechoose_form(player)
