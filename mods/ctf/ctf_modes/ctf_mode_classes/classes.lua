@@ -14,7 +14,7 @@ local classes = {
 	},
 	support = {
 		name = "Support",
-		description = "Normal HP class with healing bandages and building tools",
+		description = "Normal HP class with healing bandages, an immunity ability, and building tools",
 		items = {
 			"ctf_mode_classes:support_bandage",
 			"ctf_mode_classes:support_paxel",
