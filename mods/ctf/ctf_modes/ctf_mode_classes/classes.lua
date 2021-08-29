@@ -1,5 +1,5 @@
 local cooldowns = ctf_core.init_cooldowns()
-local CLASS_SWITCH_COOLDOWN = 0
+local CLASS_SWITCH_COOLDOWN = 30
 
 local class_list = {"knight", "ranged", "support"}
 local classes = {
