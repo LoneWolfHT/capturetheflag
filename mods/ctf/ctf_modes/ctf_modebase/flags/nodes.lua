@@ -105,8 +105,8 @@ for name, def in pairs(ctf_teams.team) do
 			"default_wood.png",
 			"default_wood.png",
 			"default_wood.png",
-			"default_wood.png^(wool_white.png^[colorize:"..color..":200^[mask:ctf_modebase_flag_mask.png)",
-			"default_wood.png^(wool_white.png^[colorize:"..color..":200^[mask:ctf_modebase_flag_mask2.png)"
+			"default_wood.png^([combine:16x16:4,0=wool_white.png^[colorize:"..color..":200)",
+			"default_wood.png^([combine:12x16:0,0=wool_white.png^[colorize:"..color..":200)"
 		},
 		node_box = {
 			type = "fixed",
