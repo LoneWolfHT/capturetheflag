@@ -60,6 +60,7 @@ ctf_modebase.bounties = ctf_core.include_files("bounties.lua")
 ctf_modebase.build_timer = ctf_core.include_files("build_timer.lua")
 
 ctf_modebase.feature_presets.rankings = ctf_core.include_files("feature_presets/rankings.lua")
+ctf_modebase.feature_presets.flag_huds = ctf_core.include_files("feature_presets/flag_huds.lua")
 
 if ctf_core.settings.server_mode == "play" then
 	local match_started = false

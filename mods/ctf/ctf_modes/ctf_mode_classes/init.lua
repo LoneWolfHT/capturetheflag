@@ -12,9 +12,9 @@ mode_classes = {
 }
 
 local rankings = ctf_modebase.feature_presets.rankings("classes", mode_classes)
+local flag_huds = ctf_modebase.feature_presets.flag_huds
 
-local flag_huds, crafts, classes = ctf_core.include_files(
-	"flag_huds.lua",
+local crafts, classes = ctf_core.include_files(
 	"crafts.lua",
 	"classes.lua"
 )
@@ -492,9 +492,15 @@ ctf_modebase.register_mode("classes", {
 		ctf_kill_list.on_punchplayer(player, hitter, ...)
 	end,
 	on_healplayer = function(player, patient, amount)
-		ctf_combat_mode.set(patient, 15, {[player:get_player_name()] = "healer"})
+		local stats = {hp_healed = amount}
 
-		rankings.add(player, {hp_healed = amount}, true)
+		if ctf_combat_mode.get(patient) then
+			ctf_combat_mode.set(patient, 15, {[player:get_player_name()] = "healer"})
+		else
+			stats.score = amount/2
+		end
+
+		rankings.add(player, stats, true)
 	end,
 	calculate_knockback = function()
 		return 0

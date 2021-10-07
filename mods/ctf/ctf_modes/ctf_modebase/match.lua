@@ -57,7 +57,10 @@ minetest.register_on_joinplayer(function(player)
 	local name = player:get_player_name()
 
 	if voting then
-		voters[name] = {choice = false, formname = ctf_modebase.show_modechoose_form(player)}
+		voters[minetest.get_player_information(name).address] = {
+			choice = false,
+			formname = ctf_modebase.show_modechoose_form(player)
+		}
 	end
 
 	if ctf_modebase.current_mode and ctf_map.current_map then
@@ -82,7 +85,7 @@ end)
 
 minetest.register_on_leaveplayer(function(player)
 	if voting then
-		voters[player:get_player_name()] = nil
+		voters[minetest.get_player_information(player:get_player_name()).address] = nil
 		voter_count = voter_count - 1
 	end
 end)
@@ -91,7 +94,10 @@ function ctf_modebase.start_mode_vote()
 	voters = {}
 
 	for _, player in pairs(minetest.get_connected_players()) do
-		voters[player:get_player_name()] = {choice = false, formname = ctf_modebase.show_modechoose_form(player)}
+		voters[minetest.get_player_information(player:get_player_name()).address] = {
+			choice = false,
+			formname = ctf_modebase.show_modechoose_form(player)
+		}
 	end
 
 	timer = ctf_modebase.VOTING_TIME
@@ -163,10 +169,15 @@ function ctf_modebase.show_modechoose_form(player)
 			func = function(playername, fields, field_name)
 				if voting then
 					if ctf_modebase.modes[modename] then
-						voters[playername].choice = modename
-						voter_count = voter_count + 1
+						local voter = voters[minetest.get_player_information(playername).address]
 
-						if voter_count >= #minetest.get_connected_players() then
+						if not voter.choice then
+							voter_count = voter_count + 1
+						end
+
+						voter.choice = modename
+
+						if voter_count >= table.count(voters) then
 							timer = 0
 						end
 
@@ -187,8 +198,10 @@ function ctf_modebase.show_modechoose_form(player)
 		description = "Please vote on what gamemode you would like to play",
 		on_quit = function(pname)
 			if voting then
+				local address = minetest.get_player_information(pname).address
+
 				minetest.after(0.1, function()
-					if voting and voters[pname] and not voters[pname].choice then
+					if voting and voters[address] and not voters[address].choice then
 						ctf_modebase.show_modechoose_form(pname)
 					end
 				end)
