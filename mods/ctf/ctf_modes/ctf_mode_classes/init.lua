@@ -11,9 +11,10 @@ mode_classes = {
 	}
 }
 
-local flag_huds, rankings, crafts, classes = ctf_core.include_files(
+local rankings = ctf_modebase.feature_presets.rankings("classes", mode_classes)
+
+local flag_huds, crafts, classes = ctf_core.include_files(
 	"flag_huds.lua",
-	"rankings.lua",
 	"crafts.lua",
 	"classes.lua"
 )

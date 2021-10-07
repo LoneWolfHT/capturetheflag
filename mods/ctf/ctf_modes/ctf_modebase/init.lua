@@ -33,6 +33,9 @@ ctf_modebase = {
 
 	--flag_captured[Team name] = true if captured, otherwise nil
 	flag_captured        = {},
+
+	-- mode feature presets
+	feature_presets     = {},
 }
 
 ctf_gui.init()
@@ -55,6 +58,8 @@ ctf_core.include_files(
 
 ctf_modebase.bounties = ctf_core.include_files("bounties.lua")
 ctf_modebase.build_timer = ctf_core.include_files("build_timer.lua")
+
+ctf_modebase.feature_presets.rankings = ctf_core.include_files("feature_presets/rankings.lua")
 
 if ctf_core.settings.server_mode == "play" then
 	local match_started = false

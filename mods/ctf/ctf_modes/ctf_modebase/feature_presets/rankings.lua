@@ -1,3 +1,8 @@
+-- dofile(filepath)("mode_technical_name", mode_data)
+-- mode_data must hold variables: SUMMARY_RANKS
+
+return function(mode_tech_name, mode_data)
+
 local rankings = ctf_rankings.init()
 
 -- can't call minetest.get_mod_storage() twice, the modstorage rankings backend calls it first
@@ -28,7 +33,7 @@ local rank_def = {
 
 		local return_str = string.format("Rankings for player %s:\n\t", minetest.colorize("#ffea00", target))
 
-		for _, rank in ipairs(mode_classic.SUMMARY_RANKS) do
+		for _, rank in ipairs(mode_data.SUMMARY_RANKS) do
 			return_str = string.format("%s%s: %s,\n\t",
 				return_str,
 				minetest.colorize("#63d437", HumanReadable(rank)),
@@ -40,10 +45,10 @@ local rank_def = {
 	end
 }
 
-ctf_modebase.register_chatcommand("classic", "rank", rank_def)
-ctf_modebase.register_chatcommand("classic", "r"   , rank_def)
+ctf_modebase.register_chatcommand(mode_tech_name, "rank", rank_def)
+ctf_modebase.register_chatcommand(mode_tech_name, "r"   , rank_def)
 
-ctf_modebase.register_chatcommand("classic", "reset_rankings", {
+ctf_modebase.register_chatcommand(mode_tech_name, "reset_rankings", {
 	description = minetest.colorize("red", "Resets rankings of you or another player to nothing"),
 	params = "[playername]",
 	func = function(name, param)
@@ -63,7 +68,7 @@ ctf_modebase.register_chatcommand("classic", "reset_rankings", {
 	end
 })
 
-ctf_modebase.register_chatcommand("classic", "makepro", {
+ctf_modebase.register_chatcommand(mode_tech_name, "makepro", {
 	description = "Make yourself or another player into a pro",
 	params = "[playername]",
 	privs = {ctf_admin = true},
@@ -78,7 +83,7 @@ ctf_modebase.register_chatcommand("classic", "makepro", {
 	end
 })
 
-ctf_modebase.register_chatcommand("classic", "top50", {
+ctf_modebase.register_chatcommand(mode_tech_name, "top50", {
 	description = "Show the top 50 players",
 	func = function(name)
 		local top50 = {}
@@ -87,7 +92,7 @@ ctf_modebase.register_chatcommand("classic", "top50", {
 			top50[pname] = rankings:get(pname) or nil
 		end
 
-		ctf_modebase.show_summary_gui(name, top50, mode_classic.SUMMARY_RANKS, {
+		ctf_modebase.show_summary_gui(name, top50, mode_data.SUMMARY_RANKS, {
 			title = "Top 50 Players",
 			disable_nonuser_colors = true
 		})
@@ -183,3 +188,5 @@ return {
 	recent          = function() return rankings.recent          end,
 	previous_recent = function() return rankings.previous_recent end,
 }
+
+end
