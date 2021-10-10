@@ -2,6 +2,7 @@ local backend = minetest.settings:get("ctf_rankings_backend") or "default"
 
 local rankings
 local env
+local top = ctf_core.include_files("top.lua")
 
 if backend == "redis" then
 	env = minetest.request_insecure_environment()
@@ -18,13 +19,13 @@ ctf_rankings = {
 			local old_require = require
 			env.rawset(_G, "require", env.require)
 
-			local new = rankings:init_new()
+			local new = rankings:init_new(table.copy(top))
 
 			env.rawset(_G, "require", old_require)
 
 			return new
 		else
-			return rankings:init_new()
+			return rankings:init_new(table.copy(top))
 		end
 	end,
 }

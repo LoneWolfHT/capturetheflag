@@ -1,11 +1,20 @@
 return {
 	backend = "redis",
 	recent = {},
-	init_new = function(self)
+	init_new = function(self, top)
 		local redis = require("redis")
 		self.client = redis.connect("127.0.0.1", tonumber(minetest.settings:get("ctf_rankings_redis_server_port")) or 6379)
+		self.top = top
 
 		assert(self.client:ping(), "Redis server not found!")
+
+		for _, pname in ipairs(self.client:keys('*')) do
+			local value = self.client:get(pname)
+			local rank = minetest.deserialize(value)
+			if rank.score then
+				top:set(pname, rank.score)
+			end
+		end
 
 		return self
 	end,
@@ -39,6 +48,8 @@ return {
 			end
 		end
 
+		self.top:set(pname, newrankings.score or 0)
+
 		self.client:set(pname, minetest.serialize(newrankings))
 	end,
 	add = function(self, pname, additions)
@@ -54,6 +65,8 @@ return {
 			newrank[k] = (newrank[k] or 0) + v
 			self.recent[pname][k] = (self.recent[pname][k] or 0) + v
 		end
+
+		self.top:set(pname, newrank.score or 0)
 
 		self.client:set(pname, minetest.serialize(newrank))
 	end

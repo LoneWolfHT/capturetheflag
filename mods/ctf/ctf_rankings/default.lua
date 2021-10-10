@@ -1,10 +1,18 @@
 return {
 	backend = "default",
 	recent = {},
-	init_new = function(self)
+	init_new = function(self, top)
 		local new_rankingobj = table.copy(self)
 
 		new_rankingobj.modstorage = assert(minetest.get_mod_storage(), "Can only init rankings at runtime!")
+		new_rankingobj.top = top
+
+		for k, v in pairs(new_rankingobj.modstorage:to_table()["fields"]) do
+			local rank = minetest.deserialize(v)
+			if rank.score then
+				top:set(k, rank.score)
+			end
+		end
 
 		return new_rankingobj
 	end,
@@ -38,6 +46,8 @@ return {
 			end
 		end
 
+		self.top:set(pname, newrankings.score or 0)
+
 		self.modstorage:set_string(pname, minetest.serialize(newrankings))
 	end,
 	add = function(self, pname, additions)
@@ -53,6 +63,8 @@ return {
 			newrank[k] = (newrank[k] or 0) + v
 			self.recent[pname][k] = (self.recent[pname][k] or 0) + v
 		end
+
+		self.top:set(pname, newrank.score or 0)
 
 		self.modstorage:set_string(pname, minetest.serialize(newrank))
 	end

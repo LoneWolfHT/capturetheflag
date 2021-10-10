@@ -5,7 +5,8 @@ mode_classic = {
 		"flag_captures", "flag_attempts",
 		"kills", "kill_assists", "bounty_kills",
 		"deaths",
-		"hp_healed"
+		"hp_healed",
+		"place"
 	}
 }
 

@@ -5,11 +5,7 @@ return function(mode_tech_name, mode_data)
 
 local rankings = ctf_rankings.init()
 
--- can't call minetest.get_mod_storage() twice, the modstorage rankings backend calls it first
-local mods = rankings.modstorage or minetest.get_mod_storage()
-
 rankings.total = {}
-rankings.top_50 = minetest.deserialize(mods:get_string("top_50")) or {}
 
 ----
 ------ COMMANDS
@@ -30,6 +26,8 @@ local rank_def = {
 		if not prank then
 			return false, string.format("Player %s has no rankings!", target)
 		end
+
+		prank.place = rankings.top:get_place(target)
 
 		local return_str = string.format("Rankings for player %s:\n\t", minetest.colorize("#ffea00", target))
 
@@ -88,7 +86,7 @@ ctf_modebase.register_chatcommand(mode_tech_name, "top50", {
 	func = function(name)
 		local top50 = {}
 
-		for _, pname in pairs(rankings.top_50) do
+		for _, pname in ipairs(rankings.top:get_top(50)) do
 			top50[pname] = rankings:get(pname) or nil
 		end
 
@@ -99,19 +97,6 @@ ctf_modebase.register_chatcommand(mode_tech_name, "top50", {
 	end,
 })
 
-local function update_top_50()
-	local cache = {}
-
-	table.sort(rankings.top_50, function(a, b)
-		if not cache[a] then cache[a] = rankings:get(a) or {score = 0} end
-		if not cache[b] then cache[b] = rankings:get(b) or {score = 0} end
-
-		return (cache[a].score or 0) < (cache[b].score or 0)
-	end)
-
-	mods:set_string("top_50", minetest.serialize(rankings.top_50))
-end
-
 return {
 	add = function(player, amounts, no_hud)
 		local hud_text = ""
@@ -120,26 +105,6 @@ return {
 
 		for name, val in pairs(amounts) do
 			hud_text = string.format("%s+%d %s | ", hud_text, val, HumanReadable(name))
-		end
-
-		if amounts.score then -- handle top50
-			local current = rankings:get(player)
-
-			if table.indexof(rankings.top_50, player) == -1 then
-				if rankings.top_50[50] then
-					if (current and current.score or 0) + amounts.score > rankings:get(rankings.top_50[50]).score then
-						table.remove(rankings.top_50)
-						table.insert(rankings.top_50, player)
-
-						update_top_50()
-					end
-				else
-					table.insert(rankings.top_50, player)
-					update_top_50()
-				end
-			else
-				update_top_50()
-			end
 		end
 
 		if pteam then
