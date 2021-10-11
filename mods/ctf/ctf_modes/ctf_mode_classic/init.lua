@@ -5,8 +5,7 @@ mode_classic = {
 		"flag_captures", "flag_attempts",
 		"kills", "kill_assists", "bounty_kills",
 		"deaths",
-		"hp_healed",
-		"place"
+		"hp_healed"
 	}
 }
 
@@ -70,22 +69,6 @@ function mode_classic.celebrate_team(teamname)
 			}, true)
 		end
 	end
-end
-
-local function insert_team_totals(match_rankings, total)
-	if not match_rankings then return {} end
-
-	local ranks = table.copy(match_rankings)
-
-	for team, rank_values in pairs(total) do
-		rank_values._special_row = true
-		rank_values._row_color = ctf_teams.team[team].color
-
-		-- There will be problems with this if player names can contain spaces
-		ranks[HumanReadable("team "..team)] = rank_values
-	end
-
-	return ranks
 end
 
 -- Returns true if player was in combat mode
@@ -380,8 +363,7 @@ ctf_modebase.register_mode("classic", {
 			pname = pname:get_player_name()
 
 			ctf_modebase.show_summary_gui(
-				pname,
-				insert_team_totals(rankings.recent(), rankings.total()),
+				pname, rankings.recent(), rankings.total(),
 				mode_classic.SUMMARY_RANKS,
 				{
 					title = HumanReadable(pteam).." Team Wins!",
@@ -413,23 +395,19 @@ ctf_modebase.register_mode("classic", {
 	end,
 	summary_func = function(name, param)
 		if not param or param == "" then
-			return true, insert_team_totals(
-				rankings.recent(),
-				rankings.total()
-			), mode_classic.SUMMARY_RANKS, {
-				title = "Match Summary",
-				special_row_title = "Total Team Stats",
-				buttons = {previous = true}
-			}
+			return
+				true, rankings.recent(), rankings.total(), mode_classic.SUMMARY_RANKS, {
+					title = "Match Summary",
+					special_row_title = "Total Team Stats",
+					buttons = {previous = true}
+				}
 		elseif param:match("p") then
-			return true, insert_team_totals(
-				rankings.previous_recent(),
-				rankings.previous_total()
-			), mode_classic.SUMMARY_RANKS, {
-				title = "Previous Match Summary",
-				special_row_title = "Total Team Stats",
-				buttons = {next = true}
-			}
+			return
+				true, rankings.previous_recent(), rankings.previous_total(), mode_classic.SUMMARY_RANKS, {
+					title = "Previous Match Summary",
+					special_row_title = "Total Team Stats",
+					buttons = {next = true}
+				}
 		else
 			return false, "Don't understand param "..dump(param)
 		end

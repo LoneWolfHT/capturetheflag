@@ -1,68 +1,80 @@
-local get_team = ctf_teams.get
-local teams = ctf_teams.team
-local format = string.format
-local insert = table.insert
-local sort = table.sort
-local concat = table.concat
-
 ---@param name string Player name
 ---@param rankings table Recent rankings to show in the gui
 ---@param rank_values table Example: `{_sort = "score", "captures" "kills"}`
 ---@param formdef table table for customizing the formspec
-function ctf_modebase.show_summary_gui(name, rankings, rank_values, formdef)
-	rank_values = table.copy(rank_values)
-
-	local rows = {}
+function ctf_modebase.show_summary_gui(name, rankings, special_rankings, rank_values, formdef)
 	local sort_by = rank_values._sort or rank_values[1]
-	local special_rows = {}
 
+	local sort = function(unsorted)
+		local sorted = {}
+
+		for pname, ranks in pairs(unsorted) do
+			local t = table.copy(ranks)
+			t.pname = pname
+			t.sort = ranks[sort_by] or 0
+			table.insert(sorted, t)
+		end
+
+		table.sort(sorted, function(a, b) return a.sort > b.sort end)
+
+		return sorted
+	end
+
+	local rankings_sorted = sort(rankings)
+	local special_rankings_sorted = sort(special_rankings)
+
+	ctf_modebase.show_summary_gui_sorted(
+		name, rankings_sorted, special_rankings_sorted, rank_values, formdef
+	)
+end
+
+---@param name string Player name
+---@param rankings table Sorted recent rankings Example: `{{pname=a, score=2}, {pname=b, score=1}}`
+---@param rank_values table Example: `{_sort = "score", "captures" "kills"}`
+---@param formdef table table for customizing the formspec
+function ctf_modebase.show_summary_gui_sorted(name, rankings, special_rankings, rank_values, formdef)
 	if not formdef then formdef = {} end
 	if not formdef.buttons then formdef.buttons = {} end
 
-	for pname, ranks in pairs(rankings) do
-		local color = "white"
+	local render = function(sorted)
+		for i, ranks in ipairs(sorted) do
+			local color = "white"
 
-		if not formdef.disable_nonuser_colors then
-			if not ranks._row_color then
-				local team = get_team(pname)
+			if not formdef.disable_nonuser_colors then
+				if not ranks._row_color then
+					local team = ctf_teams.get(ranks.pname)
 
-				if team then
-					color = teams[team].color
+					if team then
+						color = ctf_teams.team[team].color
+					end
+				else
+					color = ranks._row_color
 				end
-			else
-				color = ranks._row_color
+			elseif name == ranks.pname then
+				color = "gold"
 			end
-		elseif name == pname then
-			color = "gold"
+
+			local row = string.format("%d,%s,%s", ranks.number or i, color, ranks.pname)
+
+			for idx, rank in ipairs(rank_values) do
+				row = string.format("%s,%s", row, ranks[rank] or 0)
+			end
+
+			sorted[i] = row
 		end
-
-		local row = format("%s,%s", color, pname)
-
-		for idx, rank in ipairs(rank_values) do
-			row = format("%s,%s", row, ranks[rank] or 0)
-		end
-
-		insert(ranks._special_row and special_rows or rows, {row = row, sort = ranks[sort_by] or 0})
 	end
 
-	sort(rows, function(a, b) return a.sort > b.sort end)
+	render(rankings)
+	render(special_rankings)
 
-	if #special_rows >= 1 then
-		sort(special_rows, function(a, b) return a.sort > b.sort end)
-
-		for i, c in pairs(special_rows) do
-			special_rows[i] = format("%s,%s", i, c.row)
-		end
-
+	if #special_rankings >= 1 then
 		if formdef.special_row_title then
-			insert(special_rows, 1, format(",white,%s,%s", formdef.special_row_title, HumanReadable(concat(rank_values, "  ,"))))
+			table.insert(special_rankings, 1, string.format(
+				",white,%s,%s", formdef.special_row_title, HumanReadable(table.concat(rank_values, "  ,"))
+			))
 		end
 
-		insert(special_rows, string.rep(",", #rank_values+3))
-	end
-
-	for i, c in pairs(rows) do
-		rows[i] = format("%s,%s", i, c.row)
+		table.insert(special_rankings, string.rep(",", #rank_values+3))
 	end
 
 	ctf_gui.show_formspec(name, "ctf_modebase:summary", {
@@ -82,9 +94,9 @@ function ctf_modebase.show_summary_gui(name, rankings, rank_values, formdef)
 					("text;"):rep(#rank_values):sub(1, -2),
 				},
 				rows = {
-					#special_rows > 1 and concat(special_rows, ",") or "",
-					"white", "Player Name", HumanReadable(concat(rank_values, "  ,")),
-					concat(rows, ",")
+					#special_rankings > 1 and table.concat(special_rankings, ",") or "",
+					"white", "Player Name", HumanReadable(table.concat(rank_values, "  ,")),
+					table.concat(rankings, ",")
 				}
 			},
 			next = formdef.buttons.next and {
@@ -96,10 +108,10 @@ function ctf_modebase.show_summary_gui(name, rankings, rank_values, formdef)
 
 					if not current_mode then return end
 
-					local result, ranks, match_rank_values, newformdef = current_mode.summary_func(playername)
+					local result, nrankings, nspecial_rankings, nrank_values, nformdef = current_mode.summary_func(playername)
 
 					if result then
-						ctf_modebase.show_summary_gui(playername, ranks, match_rank_values, newformdef)
+						ctf_modebase.show_summary_gui(name, nrankings, nspecial_rankings, nrank_values, nformdef)
 					end
 				end,
 			},
@@ -112,10 +124,10 @@ function ctf_modebase.show_summary_gui(name, rankings, rank_values, formdef)
 
 					if not current_mode then return end
 
-					local result, ranks, match_rank_values, newformdef = current_mode.summary_func(playername, "previous")
+					local result, nrankings, nspecial_rankings, nrank_values, nformdef = current_mode.summary_func(playername, "p")
 
 					if result then
-						ctf_modebase.show_summary_gui(playername, ranks, match_rank_values, newformdef)
+						ctf_modebase.show_summary_gui(name, nrankings, nspecial_rankings, nrank_values, nformdef)
 					end
 				end,
 			},
@@ -133,10 +145,10 @@ minetest.register_chatcommand("summary", {
 		end
 
 		if current_mode.summary_func then
-			local result, rankings, rank_values, formdef = current_mode.summary_func(name, param)
+			local result, rankings, special_rankings, rank_values, formdef = current_mode.summary_func(name, param)
 
 			if result then
-				ctf_modebase.show_summary_gui(name, rankings, rank_values, formdef)
+				ctf_modebase.show_summary_gui(name, rankings, special_rankings, rank_values, formdef)
 			else
 				return result, rankings -- rankings holds an error message in this case
 			end

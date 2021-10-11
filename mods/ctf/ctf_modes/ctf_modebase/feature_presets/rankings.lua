@@ -7,6 +7,19 @@ local rankings = ctf_rankings.init()
 
 rankings.total = {}
 
+local function team_total(total)
+	local ranks = {}
+
+	for team, rank_values in pairs(total) do
+		rank_values._row_color = ctf_teams.team[team].color
+
+		ranks[HumanReadable("team "..team)] = rank_values
+	end
+
+	return ranks
+end
+
+
 ----
 ------ COMMANDS
 ----
@@ -27,8 +40,6 @@ local rank_def = {
 			return false, string.format("Player %s has no rankings!", target)
 		end
 
-		prank.place = rankings.top:get_place(target)
-
 		local return_str = string.format("Rankings for player %s:\n\t", minetest.colorize("#ffea00", target))
 
 		for _, rank in ipairs(mode_data.SUMMARY_RANKS) do
@@ -39,7 +50,13 @@ local rank_def = {
 			)
 		end
 
-		return true, return_str:sub(1, -3)
+		return_str = string.format("%s%s: %s",
+			return_str,
+			minetest.colorize("#63d437", "Place"),
+			minetest.colorize("#ffea00", rankings.top:get_place(target))
+		)
+
+		return true, return_str
 	end
 }
 
@@ -86,11 +103,21 @@ ctf_modebase.register_chatcommand(mode_tech_name, "top50", {
 	func = function(name)
 		local top50 = {}
 
-		for _, pname in ipairs(rankings.top:get_top(50)) do
-			top50[pname] = rankings:get(pname) or nil
+		for i, pname in ipairs(rankings.top:get_top(50)) do
+			local t = table.copy(rankings:get(pname) or {})
+			t.pname = pname
+			table.insert(top50, t)
 		end
 
-		ctf_modebase.show_summary_gui(name, top50, mode_data.SUMMARY_RANKS, {
+		local own_pos = rankings.top:get_place(name)
+		if own_pos > 50 then
+			local t = table.copy(rankings:get(name) or {})
+			t.pname = name
+			t.number = own_pos
+			table.insert(top50, t)
+		end
+
+		ctf_modebase.show_summary_gui_sorted(name, top50, {}, mode_data.SUMMARY_RANKS, {
 			title = "Top 50 Players",
 			disable_nonuser_colors = true
 		})
@@ -144,14 +171,14 @@ return {
 	end,
 	next_match = function()
 		rankings.previous_recent = table.copy(rankings.recent)
-		rankings.previous_total  = table.copy(rankings.total )
+		rankings.previous_total  = table.copy(rankings.total)
 		rankings.recent = {}
 		rankings.total = {}
 	end,
-	total           = function() return rankings.total           end,
-	previous_total  = function() return rankings.previous_total  end,
 	recent          = function() return rankings.recent          end,
 	previous_recent = function() return rankings.previous_recent end,
+	total           = function() return team_total(rankings.total)          end,
+	previous_total  = function() return team_total(rankings.previous_total) end,
 }
 
 end
