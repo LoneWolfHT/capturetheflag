@@ -1,30 +1,35 @@
+local redis = require("redis")
+local client = redis.connect("127.0.0.1", tonumber(minetest.settings:get("ctf_rankings_redis_server_port")) or 6379)
+assert(client:ping(), "Redis server not found!")
+
+return function(top)
+
+local prefix = minetest.get_current_modname() .. '|'
+
+for _, key in ipairs(client:keys(prefix .. '*')) do
+	local value = client:get(key)
+	local pname = string.sub(key, #prefix + 1)
+	local rank = minetest.parse_json(value)
+	if rank.score then
+		top:set(pname, rank.score)
+	end
+end
+
 return {
 	backend = "redis",
-	init_new = function(self, top)
-		local redis = require("redis")
-		self.client = redis.connect("127.0.0.1", tonumber(minetest.settings:get("ctf_rankings_redis_server_port")) or 6379)
-		self.top = top
+	top = top,
+	prefix = prefix,
 
-		assert(self.client:ping(), "Redis server not found!")
-
-		for _, pname in ipairs(self.client:keys('*')) do
-			local value = self.client:get(pname)
-			local rank = minetest.parse_json(value)
-			if rank.score then
-				top:set(pname, rank.score)
-			end
-		end
-
-		return self
-	end,
 	get = function(self, pname)
-		local ranks = self.client:get(pname)
+		pname = PlayerName(pname)
 
-		if not ranks or ranks == "" then
+		local rank_str = client:get(self.prefix .. pname)
+
+		if not rank_str or rank_str == "" then
 			return false
 		end
 
-		return minetest.parse_json(ranks)
+		return minetest.parse_json(rank_str)
 	end,
 	set = function(self, pname, newrankings, erase_unset)
 		pname = PlayerName(pname)
@@ -41,7 +46,7 @@ return {
 		end
 
 		self.top:set(pname, newrankings.score or 0)
-		self.client:set(pname, minetest.write_json(newrankings))
+		client:set(self.prefix .. pname, minetest.write_json(newrankings))
 	end,
 	add = function(self, pname, amounts)
 		pname = PlayerName(pname)
@@ -53,6 +58,8 @@ return {
 		end
 
 		self.top:set(pname, newrankings.score or 0)
-		self.client:set(pname, minetest.write_json(newrankings))
+		client:set(self.prefix .. pname, minetest.write_json(newrankings))
 	end
 }
+
+end

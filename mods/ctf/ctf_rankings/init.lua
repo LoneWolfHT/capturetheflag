@@ -15,17 +15,6 @@ end
 
 ctf_rankings = {
 	init = function()
-		if backend == "redis" then
-			local old_require = require
-			env.rawset(_G, "require", env.require)
-
-			local new = rankings:init_new(top())
-
-			env.rawset(_G, "require", old_require)
-
-			return new
-		else
-			return rankings:init_new(top())
-		end
+		return rankings(top())
 	end,
 }

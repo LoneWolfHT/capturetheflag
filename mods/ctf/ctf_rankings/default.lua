@@ -1,21 +1,22 @@
+return function(top)
+
+local modstorage = assert(minetest.get_mod_storage(), "Can only init rankings at runtime!")
+
+for k, v in pairs(modstorage:to_table()["fields"]) do
+	local rank = minetest.parse_json(v)
+	if rank.score then
+		top:set(k, rank.score)
+	end
+end
+
 return {
 	backend = "default",
-	init_new = function(self, top)
-		local new_rankingobj = table.copy(self)
+	top = top,
+	modstorage = modstorage,
 
-		new_rankingobj.modstorage = assert(minetest.get_mod_storage(), "Can only init rankings at runtime!")
-		new_rankingobj.top = top
-
-		for k, v in pairs(new_rankingobj.modstorage:to_table()["fields"]) do
-			local rank = minetest.parse_json(v)
-			if rank.score then
-				top:set(k, rank.score)
-			end
-		end
-
-		return new_rankingobj
-	end,
 	get = function(self, pname)
+		pname = PlayerName(pname)
+
 		local rank_str = self.modstorage:get_string(PlayerName(pname))
 
 		if not rank_str or rank_str == "" then
@@ -54,3 +55,5 @@ return {
 		self.modstorage:set_string(pname, minetest.write_json(newrankings))
 	end
 }
+
+end
