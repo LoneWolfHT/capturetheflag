@@ -1,8 +1,8 @@
 ---@param name string Player name
 ---@param rankings table Recent rankings to show in the gui
----@param rank_values table Example: `{_sort = "score", "captures" "kills"}`
 ---@param formdef table table for customizing the formspec
-function ctf_modebase.show_summary_gui(name, rankings, special_rankings, rank_values, formdef)
+---@param rank_values table Example: `{_sort = "score", "captures" "kills"}`
+function ctf_modebase.show_summary_gui(name, summary, formdef, rank_values)
 	local sort_by = rank_values._sort or rank_values[1]
 
 	local sort = function(unsorted)
@@ -20,19 +20,21 @@ function ctf_modebase.show_summary_gui(name, rankings, special_rankings, rank_va
 		return sorted
 	end
 
-	local rankings_sorted = sort(rankings)
-	local special_rankings_sorted = sort(special_rankings)
+	if summary.rankings then
+		summary.rankings = sort(summary.rankings)
+	end
+	if summary.special_rankings then
+		summary.special_rankings = sort(summary.special_rankings)
+	end
 
-	ctf_modebase.show_summary_gui_sorted(
-		name, rankings_sorted, special_rankings_sorted, rank_values, formdef
-	)
+	ctf_modebase.show_summary_gui_sorted(name, summary, formdef, rank_values)
 end
 
 ---@param name string Player name
 ---@param rankings table Sorted recent rankings Example: `{{pname=a, score=2}, {pname=b, score=1}}`
----@param rank_values table Example: `{_sort = "score", "captures" "kills"}`
 ---@param formdef table table for customizing the formspec
-function ctf_modebase.show_summary_gui_sorted(name, rankings, special_rankings, rank_values, formdef)
+---@param rank_values table Example: `{_sort = "score", "captures" "kills"}`
+function ctf_modebase.show_summary_gui_sorted(name, summary, formdef, rank_values)
 	if not formdef then formdef = {} end
 	if not formdef.buttons then formdef.buttons = {} end
 
@@ -64,6 +66,8 @@ function ctf_modebase.show_summary_gui_sorted(name, rankings, special_rankings, 
 		end
 	end
 
+	local rankings = summary.rankings or {}
+	local special_rankings = summary.special_rankings or {}
 	render(rankings)
 	render(special_rankings)
 
@@ -77,13 +81,13 @@ function ctf_modebase.show_summary_gui_sorted(name, rankings, special_rankings, 
 		table.insert(special_rankings, string.rep(",", #rank_values+3))
 	end
 
-	ctf_gui.show_formspec(name, "ctf_modebase:summary", {
+	local formspec = {
 		title = formdef.title or "Summary",
 		elements = {
 			rankings = {
 				type = "table",
-				pos = {"center", 0},
-				size = {ctf_gui.FORM_SIZE.x-1, ctf_gui.FORM_SIZE.y - (ctf_gui.ELEM_SIZE.y + 3)},
+				pos = {"center", 1},
+				size = {ctf_gui.FORM_SIZE.x - 1, ctf_gui.FORM_SIZE.y - 1 - (ctf_gui.ELEM_SIZE.y + 3)},
 				options = {
 					highlight = "#00000000",
 				},
@@ -98,41 +102,51 @@ function ctf_modebase.show_summary_gui_sorted(name, rankings, special_rankings, 
 					"white", "Player Name", HumanReadable(table.concat(rank_values, "  ,")),
 					table.concat(rankings, ",")
 				}
-			},
-			next = formdef.buttons.next and {
-				type = "button",
-				label = "See Current",
-				pos = {"center", ctf_gui.FORM_SIZE.y - (ctf_gui.ELEM_SIZE.y + 2.5)},
-				func = function(playername, fields, field_name)
-					local current_mode = ctf_modebase:get_current_mode()
-
-					if not current_mode then return end
-
-					local result, nrankings, nspecial_rankings, nrank_values, nformdef = current_mode.summary_func(playername)
-
-					if result then
-						ctf_modebase.show_summary_gui(name, nrankings, nspecial_rankings, nrank_values, nformdef)
-					end
-				end,
-			},
-			previous = formdef.buttons.previous and {
-				type = "button",
-				label = "See Previous",
-				pos = {"center", ctf_gui.FORM_SIZE.y - (ctf_gui.ELEM_SIZE.y + 2.5)},
-				func = function(playername, fields, field_name)
-					local current_mode = ctf_modebase:get_current_mode()
-
-					if not current_mode then return end
-
-					local result, nrankings, nspecial_rankings, nrank_values, nformdef = current_mode.summary_func(playername, "p")
-
-					if result then
-						ctf_modebase.show_summary_gui(name, nrankings, nspecial_rankings, nrank_values, nformdef)
-					end
-				end,
-			},
+			}
 		}
-	})
+	}
+
+	if formdef.buttons.next then
+		formspec.elements.next = {
+			type = "button",
+			label = "See Current",
+			pos = {"center", ctf_gui.FORM_SIZE.y - (ctf_gui.ELEM_SIZE.y + 2.5)},
+			func = function(playername, fields, field_name)
+				local current_mode = ctf_modebase:get_current_mode()
+
+				if not current_mode then return end
+
+				local nsummary, nformdef, nrank_values = current_mode.summary_func()
+				ctf_modebase.show_summary_gui(name, nsummary, nformdef, nrank_values)
+			end,
+		}
+	end
+
+	if formdef.buttons.previous then
+		formspec.elements.previous = {
+			type = "button",
+			label = "See Previous",
+			pos = {"center", ctf_gui.FORM_SIZE.y - (ctf_gui.ELEM_SIZE.y + 2.5)},
+			func = function(playername, fields, field_name)
+				local current_mode = ctf_modebase:get_current_mode()
+
+				if not current_mode then return end
+
+				local nsummary, nformdef, nrank_values = current_mode.summary_func(true)
+				ctf_modebase.show_summary_gui(name, nsummary, nformdef, nrank_values)
+			end,
+		}
+	end
+
+	if summary.duration then
+		formspec.elements.duration = {
+			type = "label",
+			pos = {"center", 0.5},
+			label = "Duration: " .. summary.duration,
+		}
+	end
+
+	ctf_gui.show_formspec(name, "ctf_modebase:summary", formspec)
 end
 
 minetest.register_chatcommand("summary", {
@@ -144,19 +158,27 @@ minetest.register_chatcommand("summary", {
 			return false, "No match has started yet!"
 		end
 
-		if current_mode.summary_func then
-			local result, rankings, special_rankings, rank_values, formdef = current_mode.summary_func(name, param)
-
-			if result then
-				ctf_modebase.show_summary_gui(name, rankings, special_rankings, rank_values, formdef)
-			else
-				return result, rankings -- rankings holds an error message in this case
-			end
-
-			return true
-		else
+		if not current_mode.summary_func then
 			return false, "This mode doesn't have a summary command!"
 		end
+
+		local prev
+		if not param or param == "" then
+			prev = false
+		elseif param:match("p") then
+			prev = true
+		else
+			return false, "Can't understand param " .. dump(param)
+		end
+
+		local summary, formdef, rank_values = current_mode.summary_func(prev)
+
+		if not summary then
+			return false, "No match summary!"
+		end
+
+		ctf_modebase.show_summary_gui(name, summary, formdef, rank_values)
+		return true
 	end
 })
 

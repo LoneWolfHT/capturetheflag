@@ -10,6 +10,7 @@ mode_classic = {
 }
 
 local rankings = ctf_modebase.feature_presets.rankings("classic", mode_classic)
+local summary = ctf_modebase.feature_presets.summary(mode_classic, rankings)
 local flag_huds = ctf_modebase.feature_presets.flag_huds
 
 local crafts = ctf_core.include_files(
@@ -135,7 +136,7 @@ local function end_combat_mode(player, killer)
 	return true
 end
 
-local flag_captured = false
+local flag_captured = true
 local next_team = "red"
 local old_get_next_bounty = ctf_modebase.bounties.get_next_bounty
 ctf_modebase.register_mode("classic", {
@@ -197,13 +198,9 @@ ctf_modebase.register_mode("classic", {
 		flag_huds.clear_huds()
 	end,
 	on_new_match = function(mapdef)
-		rankings.next_match()
-
-		flag_huds.clear_capturers()
-
 		flag_captured = false
 
-		ctf_modebase.build_timer.start(mapdef)
+		ctf_modebase.build_timer.start(mapdef, nil, function() summary.match_start() end)
 
 		give_initial_stuff.register_stuff_provider(function()
 			return {"default:sword_stone", "default:pick_stone", "default:torch 15", "default:stick 5"}
@@ -211,12 +208,18 @@ ctf_modebase.register_mode("classic", {
 
 		ctf_map.place_chests(mapdef)
 	end,
+	on_match_end = function()
+		summary.on_match_end()
+		rankings.on_match_end()
+
+		flag_huds.clear_capturers()
+	end,
 	allocate_player = function(player)
 		player = player:get_player_name()
 
-		local total = rankings.total()
-		local bscore = (total.blue and total.blue.score) or 0
-		local rscore = (total.red and total.red.score) or 0
+		local teams = rankings.teams()
+		local bscore = (teams.blue and teams.blue.score) or 0
+		local rscore = (teams.red and teams.red.score) or 0
 
 		if math.abs(bscore - rscore) <= 100 then
 			if not ctf_teams.remembered_player[player] then
@@ -267,17 +270,8 @@ ctf_modebase.register_mode("classic", {
 	end,
 	on_leaveplayer = function(player)
 		local pname = player:get_player_name()
-		local pteam = ctf_teams.get(pname)
-		local recent = rankings.recent()[pname]
-		local count = 0
 
-		for _ in pairs(recent or {}) do
-			count = count + 1
-		end
-
-		if not recent or count <= 1 then
-			rankings.reset_recent(pname)
-		end
+		rankings.on_leaveplayer(pname)
 
 		if end_combat_mode(player) then
 			rankings.add(player, {deaths = 1})
@@ -287,6 +281,7 @@ ctf_modebase.register_mode("classic", {
 
 		ctf_modebase.bounties:remove(pname)
 
+		local pteam = ctf_teams.get(pname)
 		if pteam then
 			ctf_modebase.bounties:update_team_bounties(pteam, BOUNTY_REWARD_FUNC, pname)
 		end
@@ -360,17 +355,9 @@ ctf_modebase.register_mode("classic", {
 		rankings.add(player, {score = 30, flag_captures = 1})
 
 		for _, pname in pairs(minetest.get_connected_players()) do
-			pname = pname:get_player_name()
-
-			ctf_modebase.show_summary_gui(
-				pname, rankings.recent(), rankings.total(),
-				mode_classic.SUMMARY_RANKS,
-				{
-					title = HumanReadable(pteam).." Team Wins!",
-					special_row_title = "Total Team Score",
-					buttons = {previous = true}
-				}
-			)
+			local sum, formdef, rank_values = summary.summary_func()
+			formdef.title = HumanReadable(pteam).." Team Wins!"
+			ctf_modebase.show_summary_gui(pname:get_player_name(), sum, formdef, rank_values)
 		end
 
 		ctf_playertag.set(minetest.get_player_by_name(player), ctf_playertag.TYPE_ENTITY)
@@ -393,25 +380,7 @@ ctf_modebase.register_mode("classic", {
 
 		return "You need at least 10 score to access this chest", deny_pro
 	end,
-	summary_func = function(name, param)
-		if not param or param == "" then
-			return
-				true, rankings.recent(), rankings.total(), mode_classic.SUMMARY_RANKS, {
-					title = "Match Summary",
-					special_row_title = "Total Team Stats",
-					buttons = {previous = true}
-				}
-		elseif param:match("p") then
-			return
-				true, rankings.previous_recent(), rankings.previous_total(), mode_classic.SUMMARY_RANKS, {
-					title = "Previous Match Summary",
-					special_row_title = "Total Team Stats",
-					buttons = {next = true}
-				}
-		else
-			return false, "Don't understand param "..dump(param)
-		end
-	end,
+	summary_func = function(prev) return summary.summary_func(prev) end,
 	on_punchplayer = function(player, hitter, ...)
 		if flag_captured then return true end
 

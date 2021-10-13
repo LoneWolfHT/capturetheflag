@@ -130,6 +130,7 @@ local function remove(self, node)
 	end
 end
 
+return function()
 return {
 	players = {},
 	root = nil,
@@ -227,3 +228,4 @@ return {
 		return ret
 	end,
 }
+end

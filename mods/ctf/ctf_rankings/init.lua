@@ -19,13 +19,13 @@ ctf_rankings = {
 			local old_require = require
 			env.rawset(_G, "require", env.require)
 
-			local new = rankings:init_new(table.copy(top))
+			local new = rankings:init_new(top())
 
 			env.rawset(_G, "require", old_require)
 
 			return new
 		else
-			return rankings:init_new(table.copy(top))
+			return rankings:init_new(top())
 		end
 	end,
 }

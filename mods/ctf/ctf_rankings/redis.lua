@@ -1,6 +1,5 @@
 return {
 	backend = "redis",
-	recent = {},
 	init_new = function(self, top)
 		local redis = require("redis")
 		self.client = redis.connect("127.0.0.1", tonumber(minetest.settings:get("ctf_rankings_redis_server_port")) or 6379)
@@ -30,44 +29,30 @@ return {
 	set = function(self, pname, newrankings, erase_unset)
 		pname = PlayerName(pname)
 
-		if not self.recent[pname] then
-			self.recent[pname] = {}
-		end
-
-		local rank = self:get(pname)
-		if rank then
-			if not erase_unset then
+		if not erase_unset then
+			local rank = self:get(pname)
+			if rank then
 				for k, v in pairs(newrankings) do
 					rank[k] = v
-					self.recent[pname][k] = self.recent[pname][v]
 				end
 
 				newrankings = rank
-			else
-				self.recent[pname] = newrankings
 			end
 		end
 
 		self.top:set(pname, newrankings.score or 0)
-
 		self.client:set(pname, minetest.serialize(newrankings))
 	end,
-	add = function(self, pname, additions)
+	add = function(self, pname, amounts)
 		pname = PlayerName(pname)
 
-		if not self.recent[pname] then
-			self.recent[pname] = {}
+		local newrankings = self:get(pname) or {}
+
+		for k, v in pairs(amounts) do
+			newrankings[k] = (newrankings[k] or 0) + v
 		end
 
-		local newrank = self:get(pname) or {}
-
-		for k, v in pairs(additions) do
-			newrank[k] = (newrank[k] or 0) + v
-			self.recent[pname][k] = (self.recent[pname][k] or 0) + v
-		end
-
-		self.top:set(pname, newrank.score or 0)
-
-		self.client:set(pname, minetest.serialize(newrank))
+		self.top:set(pname, newrankings.score or 0)
+		self.client:set(pname, minetest.serialize(newrankings))
 	end
 }

@@ -4,21 +4,24 @@
 return function(mode_tech_name, mode_data)
 
 local rankings = ctf_rankings.init()
+local rankings_recent = {}
+local rankings_teams = {}
 
-rankings.total = {}
-
-local function team_total(total)
-	local ranks = {}
-
-	for team, rank_values in pairs(total) do
-		rank_values._row_color = ctf_teams.team[team].color
-
-		ranks[HumanReadable("team "..team)] = rank_values
+local function add_recent(storage, key, amounts)
+	if not storage[key] then
+		storage[key] = {}
 	end
 
-	return ranks
+	for stat, amount in pairs(amounts) do
+		storage[key][stat] = (storage[key][stat] or 0) + amount
+	end
 end
 
+local function clear_recent(storage, key)
+	if storage[key] and #storage[key] then
+		storage[key] = nil
+	end
+end
 
 ----
 ------ COMMANDS
@@ -117,31 +120,26 @@ ctf_modebase.register_chatcommand(mode_tech_name, "top50", {
 			table.insert(top50, t)
 		end
 
-		ctf_modebase.show_summary_gui_sorted(name, top50, {}, mode_data.SUMMARY_RANKS, {
+		ctf_modebase.show_summary_gui_sorted(name, {rankings = top50}, {
 			title = "Top 50 Players",
 			disable_nonuser_colors = true
-		})
+		}, mode_data.SUMMARY_RANKS)
 	end,
 })
 
 return {
 	add = function(player, amounts, no_hud)
 		local hud_text = ""
-		local pteam = ctf_teams.get(player)
 		player = PlayerName(player)
 
 		for name, val in pairs(amounts) do
 			hud_text = string.format("%s+%d %s | ", hud_text, val, HumanReadable(name))
 		end
 
-		if pteam then
-			if not rankings.total[pteam] then
-				rankings.total[pteam] = {}
-			end
+		add_recent(rankings_recent, player, amounts)
 
-			for stat, amount in pairs(amounts) do
-				rankings.total[pteam][stat] = (rankings.total[pteam][stat] or 0) + amount
-			end
+		if rankings_recent[player]._team then
+			add_recent(rankings_teams, rankings_recent[player]._team, amounts)
 		end
 
 		if not no_hud then
@@ -151,34 +149,38 @@ return {
 		rankings:add(player, amounts)
 	end,
 	set_team = function(player, team)
-		local pname = PlayerName(player)
+		player = PlayerName(player)
 		local tcolor = ctf_teams.team[team].color
 
-		if not rankings.recent[pname] then
-			rankings.recent[pname] = {_row_color = tcolor, _group = team}
-		else
-			rankings.recent[pname]._row_color = tcolor
-			rankings.recent[pname]._group = team
+		if not rankings_recent[player] then
+			rankings_recent[player] = {}
 		end
+
+		if not rankings_teams[team] then
+			rankings_teams[team] = {}
+		end
+
+		rankings_recent[player]._row_color = tcolor
+		rankings_recent[player]._team = team
 	end,
 	get = function(player, specific)
 		local rank = rankings:get(player)
 
 		return (specific and rank[specific]) or rank
 	end,
-	reset_recent = function(player)
-		rankings.recent[player] = nil
+	on_leaveplayer = function(player)
+		player = PlayerName(player)
+		if rankings_recent[player] and rankings_recent[player]._team then
+			clear_recent(rankings_teams, rankings_recent[player]._team)
+		end
+		clear_recent(rankings_recent, player)
 	end,
-	next_match = function()
-		rankings.previous_recent = table.copy(rankings.recent)
-		rankings.previous_total  = table.copy(rankings.total)
-		rankings.recent = {}
-		rankings.total = {}
+	on_match_end = function()
+		rankings_recent = {}
+		rankings_teams = {}
 	end,
-	recent          = function() return rankings.recent          end,
-	previous_recent = function() return rankings.previous_recent end,
-	total           = function() return team_total(rankings.total)          end,
-	previous_total  = function() return team_total(rankings.previous_total) end,
+	recent = function() return rankings_recent end,
+	teams  = function() return rankings_teams  end,
 }
 
 end
