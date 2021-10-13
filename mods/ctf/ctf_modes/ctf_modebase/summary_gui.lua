@@ -149,7 +149,7 @@ function ctf_modebase.show_summary_gui_sorted(name, summary, formdef, rank_value
 	ctf_gui.show_formspec(name, "ctf_modebase:summary", formspec)
 end
 
-minetest.register_chatcommand("summary", {
+ctf_core.register_chatcommand_alias("summary", "s", {
 	description = "Show a summary for the current match",
 	func = function(name, param)
 		local current_mode = ctf_modebase:get_current_mode()
@@ -181,5 +181,3 @@ minetest.register_chatcommand("summary", {
 		return true
 	end
 })
-
-minetest.register_chatcommand("s", minetest.registered_chatcommands.summary)

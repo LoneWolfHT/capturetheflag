@@ -42,6 +42,20 @@ minetest.register_on_player_receive_fields(function(player, formname, fields, ..
 end)
 
 --
+--- COMMANDS
+--
+
+function ctf_core.register_chatcommand_alias(name, alias, def)
+	minetest.register_chatcommand(name, def)
+	if alias then
+		minetest.register_chatcommand(alias, {
+			description = "An alias for /" .. name,
+			func = def.func,
+		})
+	end
+end
+
+--
 --- STRINGS
 --
 

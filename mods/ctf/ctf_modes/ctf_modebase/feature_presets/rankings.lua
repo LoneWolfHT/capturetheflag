@@ -63,8 +63,7 @@ local rank_def = {
 	end
 }
 
-ctf_modebase.register_chatcommand(mode_tech_name, "rank", rank_def)
-ctf_modebase.register_chatcommand(mode_tech_name, "r"   , rank_def)
+ctf_modebase.register_chatcommand_alias(mode_tech_name, "rank", "r", rank_def)
 
 ctf_modebase.register_chatcommand(mode_tech_name, "reset_rankings", {
 	description = minetest.colorize("red", "Resets rankings of you or another player to nothing"),
