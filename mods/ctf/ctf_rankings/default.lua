@@ -7,7 +7,7 @@ return {
 		new_rankingobj.top = top
 
 		for k, v in pairs(new_rankingobj.modstorage:to_table()["fields"]) do
-			local rank = minetest.deserialize(v)
+			local rank = minetest.parse_json(v)
 			if rank.score then
 				top:set(k, rank.score)
 			end
@@ -22,7 +22,7 @@ return {
 			return false
 		end
 
-		return minetest.deserialize(rank_str)
+		return minetest.parse_json(rank_str)
 	end,
 	set = function(self, pname, newrankings, erase_unset)
 		pname = PlayerName(pname)
@@ -39,7 +39,7 @@ return {
 		end
 
 		self.top:set(pname, newrankings.score or 0)
-		self.modstorage:set_string(pname, minetest.serialize(newrankings))
+		self.modstorage:set_string(pname, minetest.write_json(newrankings))
 	end,
 	add = function(self, pname, amounts)
 		pname = PlayerName(pname)
@@ -51,6 +51,6 @@ return {
 		end
 
 		self.top:set(pname, newrankings.score or 0)
-		self.modstorage:set_string(pname, minetest.serialize(newrankings))
+		self.modstorage:set_string(pname, minetest.write_json(newrankings))
 	end
 }

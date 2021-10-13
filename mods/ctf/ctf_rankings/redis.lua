@@ -9,7 +9,7 @@ return {
 
 		for _, pname in ipairs(self.client:keys('*')) do
 			local value = self.client:get(pname)
-			local rank = minetest.deserialize(value)
+			local rank = minetest.parse_json(value)
 			if rank.score then
 				top:set(pname, rank.score)
 			end
@@ -24,7 +24,7 @@ return {
 			return false
 		end
 
-		return minetest.deserialize(ranks)
+		return minetest.parse_json(ranks)
 	end,
 	set = function(self, pname, newrankings, erase_unset)
 		pname = PlayerName(pname)
@@ -41,7 +41,7 @@ return {
 		end
 
 		self.top:set(pname, newrankings.score or 0)
-		self.client:set(pname, minetest.serialize(newrankings))
+		self.client:set(pname, minetest.write_json(newrankings))
 	end,
 	add = function(self, pname, amounts)
 		pname = PlayerName(pname)
@@ -53,6 +53,6 @@ return {
 		end
 
 		self.top:set(pname, newrankings.score or 0)
-		self.client:set(pname, minetest.serialize(newrankings))
+		self.client:set(pname, minetest.write_json(newrankings))
 	end
 }
