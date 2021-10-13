@@ -101,6 +101,34 @@ ctf_modebase.register_chatcommand(mode_tech_name, "makepro", {
 	end
 })
 
+ctf_modebase.register_chatcommand(mode_tech_name, "add_score", {
+	description = "Add score to player",
+	params = "[playername] [score]",
+	privs = {ctf_admin = true},
+	func = function(name, param)
+		local pname, score = string.match(param, "^(.*) (.*)$")
+
+		if not pname then
+			return false, "You should provide the player name"
+		end
+
+		score = tonumber(score)
+		if not score then
+			return false, "You should provide score amount"
+		end
+
+		local old_ranks = rankings:get(pname)
+		if not old_ranks then
+			return false, string.format("Player %s has no rankings", pname)
+		end
+
+		local old_score = old_ranks.score or 0
+		rankings:set(pname, {score = old_score + score})
+
+		return true, string.format("Added %d score to player %s", score, pname)
+	end
+})
+
 ctf_modebase.register_chatcommand(mode_tech_name, "top50", {
 	description = "Show the top 50 players",
 	func = function(name)
