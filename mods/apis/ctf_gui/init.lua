@@ -158,10 +158,34 @@ function ctf_gui.show_formspec(player, formname, formdef)
 					minetest.formspec_escape(def.label),
 					def.default or false
 				)
+			elseif def.type == "textarea" then
+				formspec = formspec .. string.format(
+					"textarea[%f,%f;%f,%f;;;%s]",
+					def.pos.x,
+					def.pos.y,
+					def.size.x,
+					def.size.y,
+					minetest.formspec_escape(def.text)
+				)
 			elseif def.type == "table" then
-				local tablecolumns = {}
-				local tableoptions = {}
+				if def.options then
+					local tableoptions = {}
+					for name, option in pairs(def.options) do
+						if type(tonumber(name)) ~= "number" then
+							table.insert(tableoptions, string.format("%s=%s", name, option))
+						else
+							table.insert(tableoptions, option)
+						end
+					end
 
+					formspec = formspec ..
+						string.format(
+							"tableoptions[%s]",
+							table.concat(tableoptions, ";")
+						)
+				end
+
+				local tablecolumns = {}
 				for _, column in ipairs(def.columns) do
 					if type(column) == "table" then
 						local tc_out = column.type
@@ -178,33 +202,22 @@ function ctf_gui.show_formspec(player, formname, formdef)
 					end
 				end
 
-				for name, option in pairs(def.options) do
-					if type(tonumber(name)) ~= "number" then
-						table.insert(tableoptions, string.format("%s=%s", name, option))
-					else
-						table.insert(tableoptions, option)
-					end
-				end
 
 				formspec = formspec ..
-						string.format(
-							"tableoptions[%s]",
-							table.concat(tableoptions, ";")
-						) ..
-						string.format(
-							"tablecolumns[%s]",
-							table.concat(tablecolumns, ";")
-						) ..
-						string.format(
-							"table[%f,%f;%f,%f;%s;%s;%d]",
-							def.pos.x,
-							def.pos.y,
-							def.size.x,
-							def.size.y,
-							id,
-							table.concat(def.rows, ","),
-							def.default_idx or 1
-						)
+					string.format(
+						"tablecolumns[%s]",
+						table.concat(tablecolumns, ";")
+					) ..
+					string.format(
+						"table[%f,%f;%f,%f;%s;%s;%d]",
+						def.pos.x,
+						def.pos.y,
+						def.size.x,
+						def.size.y,
+						id,
+						table.concat(def.rows, ","),
+						def.default_idx or 1
+					)
 			end
 		end
 	end

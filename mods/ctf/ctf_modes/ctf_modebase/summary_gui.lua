@@ -102,7 +102,7 @@ function ctf_modebase.show_summary_gui_sorted(name, rankings, special_rankings, 
 			type = "button",
 			label = "See Current",
 			pos = {"center", ctf_gui.FORM_SIZE.y - (ctf_gui.ELEM_SIZE.y + 2.5)},
-			func = function(playername, fields, field_name)
+			func = function()
 				local current_mode = ctf_modebase:get_current_mode()
 
 				if not current_mode then return end
@@ -118,7 +118,7 @@ function ctf_modebase.show_summary_gui_sorted(name, rankings, special_rankings, 
 			type = "button",
 			label = "See Previous",
 			pos = {"center", ctf_gui.FORM_SIZE.y - (ctf_gui.ELEM_SIZE.y + 2.5)},
-			func = function(playername, fields, field_name)
+			func = function()
 				local current_mode = ctf_modebase:get_current_mode()
 
 				if not current_mode then return end
