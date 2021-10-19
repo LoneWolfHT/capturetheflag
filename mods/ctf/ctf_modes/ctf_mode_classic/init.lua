@@ -344,6 +344,8 @@ ctf_modebase.register_mode("classic", {
 	end,
 	on_flag_capture = function(player, captured_team)
 		local pteam = ctf_teams.get(player)
+		local tcolor = ctf_teams.team[pteam].color
+
 		mode_classic.celebrate_team(pteam)
 
 		flag_captured = true
@@ -354,10 +356,12 @@ ctf_modebase.register_mode("classic", {
 
 		rankings.add(player, {score = 30, flag_captures = 1})
 
+		summary.set_winner(string.format("Player %s captured",  minetest.colorize(tcolor, player)))
+
 		for _, pname in pairs(minetest.get_connected_players()) do
-			local sum, formdef, rank_values = summary.summary_func()
-			formdef.title = HumanReadable(pteam).." Team Wins!"
-			ctf_modebase.show_summary_gui(pname:get_player_name(), sum, formdef, rank_values)
+			local match_rankings, special_rankings, rank_values, formdef = summary.summary_func()
+			formdef.title = HumanReadable(pteam) .." Team Wins!"
+			ctf_modebase.show_summary_gui(pname:get_player_name(), match_rankings, special_rankings, rank_values, formdef)
 		end
 
 		ctf_playertag.set(minetest.get_player_by_name(player), ctf_playertag.TYPE_ENTITY)

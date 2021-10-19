@@ -3,6 +3,7 @@ local previous = nil
 return function(mode_data, rankings)
 
 local start_time = nil
+local winner = nil
 
 local function team_rankings(total)
 	local ranks = {}
@@ -32,26 +33,22 @@ return {
 	summary_func = function(prev)
 		if not prev then
 			return
-				{
-					rankings = rankings.recent(),
-					special_rankings = team_rankings(rankings.teams()),
-					duration = get_duration(),
-				}, {
+				rankings.recent(), team_rankings(rankings.teams()), mode_data.SUMMARY_RANKS, {
 					title = "Match Summary",
 					special_row_title = "Total Team Stats",
+					duration = get_duration(),
+					winner = winner,
 					buttons = {previous = previous ~= nil},
-				}, mode_data.SUMMARY_RANKS
+				}
 		elseif previous ~= nil then
 			return
-				{
-					rankings = previous.players,
-					special_rankings = team_rankings(previous.teams),
-					duration = previous.duration,
-				}, {
+				previous.players, team_rankings(previous.teams), previous.mode_data.SUMMARY_RANKS, {
 					title = "Previous Match Summary",
 					special_row_title = "Total Team Stats",
+					duration = previous.duration,
+					winner = previous.winner,
 					buttons = {next = true},
-				}, previous.mode_data.SUMMARY_RANKS
+				}
 		end
 	end,
 	on_match_end = function()
@@ -59,9 +56,14 @@ return {
 			players = rankings.recent(),
 			teams = rankings.teams(),
 			duration = get_duration(),
+			winner = winner or "NO WINNER",
 			mode_data = mode_data,
 		}
 		start_time = nil
+		winner = nil
+	end,
+	set_winner = function (i)
+		winner = i
 	end,
 	match_start = function ()
 		start_time = os.time()

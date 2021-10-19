@@ -147,10 +147,10 @@ ctf_modebase.register_chatcommand(mode_tech_name, "top50", {
 			table.insert(top50, t)
 		end
 
-		ctf_modebase.show_summary_gui_sorted(name, {rankings = top50}, {
+		ctf_modebase.show_summary_gui_sorted(name, top50, {}, mode_data.SUMMARY_RANKS, {
 			title = "Top 50 Players",
 			disable_nonuser_colors = true
-		}, mode_data.SUMMARY_RANKS)
+		})
 	end,
 })
 

@@ -1,8 +1,8 @@
 ---@param name string Player name
 ---@param rankings table Recent rankings to show in the gui
----@param formdef table table for customizing the formspec
 ---@param rank_values table Example: `{_sort = "score", "captures" "kills"}`
-function ctf_modebase.show_summary_gui(name, summary, formdef, rank_values)
+---@param formdef table table for customizing the formspec
+function ctf_modebase.show_summary_gui(name, rankings, special_rankings, rank_values, formdef)
 	local sort_by = rank_values._sort or rank_values[1]
 
 	local sort = function(unsorted)
@@ -20,21 +20,14 @@ function ctf_modebase.show_summary_gui(name, summary, formdef, rank_values)
 		return sorted
 	end
 
-	if summary.rankings then
-		summary.rankings = sort(summary.rankings)
-	end
-	if summary.special_rankings then
-		summary.special_rankings = sort(summary.special_rankings)
-	end
-
-	ctf_modebase.show_summary_gui_sorted(name, summary, formdef, rank_values)
+	ctf_modebase.show_summary_gui_sorted(name, sort(rankings), sort(special_rankings), rank_values, formdef)
 end
 
 ---@param name string Player name
 ---@param rankings table Sorted recent rankings Example: `{{pname=a, score=2}, {pname=b, score=1}}`
----@param formdef table table for customizing the formspec
 ---@param rank_values table Example: `{_sort = "score", "captures" "kills"}`
-function ctf_modebase.show_summary_gui_sorted(name, summary, formdef, rank_values)
+---@param formdef table table for customizing the formspec
+function ctf_modebase.show_summary_gui_sorted(name, rankings, special_rankings, rank_values, formdef)
 	if not formdef then formdef = {} end
 	if not formdef.buttons then formdef.buttons = {} end
 
@@ -66,8 +59,6 @@ function ctf_modebase.show_summary_gui_sorted(name, summary, formdef, rank_value
 		end
 	end
 
-	local rankings = summary.rankings or {}
-	local special_rankings = summary.special_rankings or {}
 	render(rankings)
 	render(special_rankings)
 
@@ -116,8 +107,8 @@ function ctf_modebase.show_summary_gui_sorted(name, summary, formdef, rank_value
 
 				if not current_mode then return end
 
-				local nsummary, nformdef, nrank_values = current_mode.summary_func()
-				ctf_modebase.show_summary_gui(name, nsummary, nformdef, nrank_values)
+				local nrankings, nspecial_rankings, nrank_values, nformdef = current_mode.summary_func()
+				ctf_modebase.show_summary_gui(name, nrankings, nspecial_rankings, nrank_values, nformdef)
 			end,
 		}
 	end
@@ -132,17 +123,25 @@ function ctf_modebase.show_summary_gui_sorted(name, summary, formdef, rank_value
 
 				if not current_mode then return end
 
-				local nsummary, nformdef, nrank_values = current_mode.summary_func(true)
-				ctf_modebase.show_summary_gui(name, nsummary, nformdef, nrank_values)
+				local nrankings, nspecial_rankings, nrank_values, nformdef = current_mode.summary_func(true)
+				ctf_modebase.show_summary_gui(name, nrankings, nspecial_rankings, nrank_values, nformdef)
 			end,
 		}
 	end
 
-	if summary.duration then
+	if formdef.duration then
 		formspec.elements.duration = {
 			type = "label",
 			pos = {"center", 0.5},
-			label = "Duration: " .. summary.duration,
+			label = "Duration: " .. formdef.duration,
+		}
+	end
+
+	if formdef.winner then
+		formspec.elements.winner = {
+			type = "label",
+			pos = {1, 0.5},
+			label = formdef.winner,
 		}
 	end
 
@@ -171,13 +170,13 @@ ctf_core.register_chatcommand_alias("summary", "s", {
 			return false, "Can't understand param " .. dump(param)
 		end
 
-		local summary, formdef, rank_values = current_mode.summary_func(prev)
+		local rankings, special_rankings, rank_values, formdef = current_mode.summary_func(prev)
 
-		if not summary then
+		if not rankings then
 			return false, "No match summary!"
 		end
 
-		ctf_modebase.show_summary_gui(name, summary, formdef, rank_values)
+		ctf_modebase.show_summary_gui(name, rankings, special_rankings, rank_values, formdef)
 		return true
 	end
 })
