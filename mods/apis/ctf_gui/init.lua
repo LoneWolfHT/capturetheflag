@@ -167,6 +167,15 @@ function ctf_gui.show_formspec(player, formname, formdef)
 					def.size.y,
 					minetest.formspec_escape(def.text)
 				)
+			elseif def.type == "image" then
+				formspec = formspec .. string.format(
+					"image[%f,%f;%f,%f;%s]",
+					def.pos.x,
+					def.pos.y,
+					def.size.x,
+					def.size.y,
+					def.texture
+				)
 			elseif def.type == "table" then
 				if def.options then
 					local tableoptions = {}

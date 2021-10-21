@@ -49,47 +49,59 @@ local function show_catalog(pname, current_map)
 	if current_map_meta.author and current_map_meta.author ~= "" then
 		formspec.elements.author = {
 			type = "label",
-			pos = {7, 1},
+			pos = {7, y},
 			label = "By: " .. minetest.colorize("#cccccc", current_map_meta.author),
 		}
-		y = y + 1
+		y = y + 0.5
+	end
+
+	-- "maps/{current_map}/screenshot.png" is copied to "textures/{current_map}_screenshot.png"
+	local image_texture = current_map .. "_screenshot.png"
+	if ctf_core.file_exists(string.format("%s/textures/%s", minetest.get_modpath("ctf_map"), image_texture)) then
+		formspec.elements.image = {
+			type = "image",
+			pos = {7, y},
+			size = {10, 6},
+			texture = image_texture,
+		}
+		y = y + 6.5
 	end
 
 	if current_map_meta.hint and current_map_meta.hint ~= "" then
 		formspec.elements.hint_label = {
 			type = "label",
 			pos = {7, y},
-			label = minetest.colorize("#ffff00", "HINT:")
+			label = minetest.colorize("#ffff00", "HINT:"),
 		}
 		formspec.elements.hint = {
 			type = "textarea",
 			pos = {7, y + 0.5},
-			size = {10, 2},
+			size = {10, 1},
 			text = current_map_meta.hint,
 		}
-		y = y + 3
+		y = y + 1.5
 	end
 
 	if current_map_meta.license and current_map_meta.license ~= "" then
 		formspec.elements.license_label = {
 			type = "label",
 			pos = {7, y},
-			label = minetest.colorize("#ffff00", "LICENSE:")
+			label = minetest.colorize("#ffff00", "LICENSE:"),
 		}
 		formspec.elements.license = {
 			type = "textarea",
 			pos = {7, y + 0.5},
-			size = {10, 2},
+			size = {10, 1},
 			text = current_map_meta.license,
 		}
-		y = y + 3
+		y = y + 1.5
 	end
 
 	if current_map_meta.others and current_map_meta.others ~= "" then
 		formspec.elements.others_label = {
 			type = "label",
 			pos = {7, y},
-			label = minetest.colorize("#ffff00", "MORE INFORMATION")
+			label = minetest.colorize("#ffff00", "MORE INFORMATION"),
 		}
 		formspec.elements.others = {
 			type = "textarea",
