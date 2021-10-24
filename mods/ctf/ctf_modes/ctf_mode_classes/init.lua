@@ -14,18 +14,12 @@ mode_classes = {
 local rankings = ctf_modebase.feature_presets.rankings("classes", mode_classes)
 local summary = ctf_modebase.feature_presets.summary(mode_classes, rankings)
 local flag_huds = ctf_modebase.feature_presets.flag_huds
+local bounties = ctf_modebase.feature_presets.bounties(rankings)
 
 local crafts, classes = ctf_core.include_files(
 	"crafts.lua",
 	"classes.lua"
 )
-
-local function BOUNTY_REWARD_FUNC(pname, pteam)
-	local match_rank = rankings.recent()[pname] or {}
-	local kd = (match_rank.kills or 1) / (match_rank.deaths or 1)
-
-	return {bounty_kills = 1, score = math.max(0, math.min(500, kd * 30))}
-end
 
 local FLAG_CAPTURE_TIMER = 60 * 3
 
@@ -33,9 +27,8 @@ local function calculate_killscore(player)
 	local pname = PlayerName(player)
 	local match_rank = rankings.recent()[pname] or {}
 	local kd = (match_rank.kills or 1) / (match_rank.deaths or 1)
-	local bounty_reward = ctf_modebase.bounties:player_has(pname)
 
-	return math.round(kd * 5) + (bounty_reward and bounty_reward.score or 0)
+	return math.round(kd * 5)
 end
 
 function mode_classes.tp_player_near_flag(player)
@@ -107,10 +100,8 @@ local function end_combat_mode(player, killer)
 			local bounty = ctf_modebase.bounties:player_has(player)
 
 			if bounty then
-				bounty.score = nil
-
 				for name, amount in pairs(bounty) do
-					rewards[name] = amount
+					rewards[name] = (rewards[name] or 0) + amount
 				end
 
 				ctf_modebase.bounties:remove(player)
@@ -121,7 +112,7 @@ local function end_combat_mode(player, killer)
 			-- share kill score with healers
 			ctf_combat_mode.manage_extra(killer, function(pname, type)
 				if type == "healer" then
-					rankings.add(pname, {score = killscore})
+					rankings.add(pname, {score = rewards.score})
 				end
 
 				return type
@@ -149,6 +140,7 @@ end
 
 local flag_captured = true
 local next_team = "red"
+local old_bounty_reward_func = ctf_modebase.bounties.bounty_reward_func
 local old_get_next_bounty = ctf_modebase.bounties.get_next_bounty
 local old_get_colored_skin = ctf_cosmetics.get_colored_skin
 ctf_modebase.register_mode("classes", {
@@ -191,21 +183,8 @@ ctf_modebase.register_mode("classes", {
 		end
 	end,
 	on_mode_start = function()
-		ctf_modebase.bounties.get_next_bounty = function(team_members)
-			local best_kd = {amount = 0}
-			local recent = rankings.recent()
-
-			for _, pname in pairs(team_members) do
-				local kd = recent[pname] and (recent[pname].kills or 1) / (recent[pname].deaths or 1) or 1
-
-				if kd > best_kd.amount then
-					best_kd.amount = kd
-					best_kd.name = pname
-				end
-			end
-
-			return best_kd.name
-		end
+		ctf_modebase.bounties.bounty_reward_func = bounties.bounty_reward_func
+		ctf_modebase.bounties.get_next_bounty = bounties.get_next_bounty
 
 		ctf_cosmetics.get_colored_skin = function(player, color)
 			local classname = classes.get_name(player)
@@ -214,6 +193,7 @@ ctf_modebase.register_mode("classes", {
 		end
 	end,
 	on_mode_end = function()
+		ctf_modebase.bounties.bounty_reward_func = old_bounty_reward_func
 		ctf_modebase.bounties.get_next_bounty = old_get_next_bounty
 
 		ctf_cosmetics.get_colored_skin = old_get_colored_skin
@@ -225,7 +205,10 @@ ctf_modebase.register_mode("classes", {
 	on_new_match = function(mapdef)
 		flag_captured = false
 
-		ctf_modebase.build_timer.start(mapdef, 60 * 1.5, function() summary.match_start() end)
+		ctf_modebase.build_timer.start(mapdef, 60 * 1.5, function()
+			summary.on_match_start()
+			ctf_modebase.bounties:on_match_start()
+		end)
 
 		give_initial_stuff.register_stuff_provider(function(player)
 			local initial_stuff = classes.get(player).items or {}
@@ -240,6 +223,8 @@ ctf_modebase.register_mode("classes", {
 	on_match_end = function()
 		summary.on_match_end()
 		rankings.on_match_end()
+
+		ctf_modebase.bounties:on_match_end()
 
 		flag_huds.clear_capturers()
 	end,
@@ -290,7 +275,7 @@ ctf_modebase.register_mode("classes", {
 
 		flag_huds.on_allocplayer(player)
 
-		ctf_modebase.bounties:update_team_bounties(teamname, BOUNTY_REWARD_FUNC)
+		ctf_modebase.bounties:on_player_join(player)
 	end,
 	on_leaveplayer = function(player)
 		local pname = player:get_player_name()
@@ -302,13 +287,6 @@ ctf_modebase.register_mode("classes", {
 		end
 
 		flag_huds.untrack_capturer(pname)
-
-		ctf_modebase.bounties:remove(pname)
-
-		local pteam = ctf_teams.get(pname)
-		if pteam then
-			ctf_modebase.bounties:update_team_bounties(pteam, BOUNTY_REWARD_FUNC, pname)
-		end
 	end,
 	on_dieplayer = function(player, reason)
 		if reason.type == "punch" and reason.object and reason.object:is_player() then

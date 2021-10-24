@@ -62,10 +62,10 @@ return {
 		start_time = nil
 		winner = nil
 	end,
-	set_winner = function (i)
+	set_winner = function(i)
 		winner = i
 	end,
-	match_start = function ()
+	on_match_start = function()
 		start_time = os.time()
 	end,
 }
