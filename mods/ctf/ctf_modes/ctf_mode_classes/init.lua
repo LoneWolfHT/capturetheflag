@@ -205,6 +205,8 @@ ctf_modebase.register_mode("classes", {
 	on_new_match = function(mapdef)
 		flag_captured = false
 
+		classes.on_new_match()
+
 		ctf_modebase.build_timer.start(mapdef, 60 * 1.5, function()
 			summary.on_match_start()
 			ctf_modebase.bounties:on_match_start()
