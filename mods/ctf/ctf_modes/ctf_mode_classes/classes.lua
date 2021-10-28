@@ -79,7 +79,7 @@ local function update_wear(pname, item, cooldown_time, time_passed, down)
 	)
 end
 
-function stop_wear_updates()
+local function stop_wear_updates()
 	for _, wear_updates in pairs(wear_timers) do
 		for _, timer_job in pairs(wear_updates) do
 			timer_job:cancel()
