@@ -15,6 +15,7 @@ function ctf_teams.set(player, teamname)
 
 	assert(type(teamname) == "string")
 	if not (ctf_teams.player_team[player] and ctf_teams.player_team[player].locked) then
+		minetest.log("Hello from "..dump(player))
 		ctf_teams.player_team[player] = {
 			name = teamname,
 		}

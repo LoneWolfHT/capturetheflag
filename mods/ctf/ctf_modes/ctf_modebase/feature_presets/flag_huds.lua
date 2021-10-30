@@ -75,6 +75,27 @@ local function untrack_capturer(player)
 	end
 end
 
+local function update_flag_positions(player)
+	for tname, def in pairs(ctf_map.current_map.teams) do
+		local flag_pos = table.copy(def.flag_pos)
+
+		if not hud:exists(player, "flag_pos:"..tname) then
+			hud:add(player, "flag_pos:"..tname, {
+				hud_elem_type = "waypoint",
+				waypoint_text = HumanReadable(tname).."'s base",
+				color = ctf_teams.team[tname].color_hex,
+				world_pos = flag_pos,
+			})
+		elseif ctf_modebase.flag_captured[tname] then
+			hud:remove(player, "flag_pos:"..tname)
+		else
+			hud:change(player, "flag_pos:"..tname, {
+				world_pos = flag_pos,
+			})
+		end
+	end
+end
+
 local timer = 0
 minetest.register_globalstep(function(dtime)
 	if not player_timers then return end
@@ -104,16 +125,20 @@ return {
 
 		if not player_timers then player_timers = {} end
 
-		player_timers[player] = time
-		player_timer_count = player_timer_count + 1
+		if not player_timers[player] then
+			player_timers[player] = time
+			player_timer_count = player_timer_count + 1
 
-		hud:add(player, "flag_timer", {
-			hud_elem_type = "text",
-			position = {x = 0.5, y = 0},
-			alignment = {x = "center", y = "down"},
-			color = 0xFF0000,
-			text_scale = 2
-		})
+			hud:add(player, "flag_timer", {
+				hud_elem_type = "text",
+				position = {x = 0.5, y = 0},
+				alignment = {x = "center", y = "down"},
+				color = 0xFF0000,
+				text_scale = 2
+			})
+		else
+			player_timers[player] = time -- Player already has a flag, just reset their capture timer
+		end
 	end,
 	untrack_capturer = untrack_capturer,
 	clear_capturers = function()
@@ -141,26 +166,12 @@ return {
 			hud:change(player, "flag_status", status)
 		end
 
-		for tname, def in pairs(ctf_map.current_map.teams) do
-			local flag_pos = table.copy(def.flag_pos)
-
-			if not hud:exists(player, "flag_pos:"..tname) then
-				hud:add(player, "flag_pos:"..tname, {
-					hud_elem_type = "waypoint",
-					waypoint_text = HumanReadable(tname).."'s base",
-					color = ctf_teams.team[tname].color_hex,
-					world_pos = flag_pos,
-				})
-			else
-				hud:change(player, "flag_pos:"..tname, {
-					world_pos = flag_pos,
-				})
-			end
-		end
+		update_flag_positions(player)
 	end,
 	update = function()
 		for _, player in pairs(minetest.get_connected_players()) do
 			hud:change(player, "flag_status", get_status(player:get_player_name()))
+			update_flag_positions(player)
 		end
 	end,
 	clear_huds = function()

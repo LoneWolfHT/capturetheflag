@@ -138,15 +138,17 @@ local function end_combat_mode(player, killer)
 	return true
 end
 
-local flag_captured = true
-local next_team = "red"
+local team_list
+local teams_left
+local match_over = true
+local next_team = 1
 local old_bounty_reward_func = ctf_modebase.bounties.bounty_reward_func
 local old_get_next_bounty = ctf_modebase.bounties.get_next_bounty
 local old_get_colored_skin = ctf_cosmetics.get_colored_skin
 ctf_modebase.register_mode("classes", {
 	map_whitelist = {
 		"bridge", "caverns", "coast", "iceage", "two_hills", "plains", "desert_spikes",
-		"river_valley", "plain_battle", --"moon",
+		"river_valley", "plain_battle", "karsthafen", "abandoned_isles", "ahkmenrah_pyramids", "capture_legend", --"moon",
 	},
 	treasures = {
 		["default:ladder_wood"] = {                max_count = 20, rarity = 0.3, max_stacks = 5},
@@ -203,7 +205,8 @@ ctf_modebase.register_mode("classes", {
 		classes.finish()
 	end,
 	on_new_match = function(mapdef)
-		flag_captured = false
+		match_over = false
+		teams_left = table.count(mapdef.teams)
 
 		classes.on_new_match()
 
@@ -233,30 +236,43 @@ ctf_modebase.register_mode("classes", {
 	allocate_player = function(player)
 		player = player:get_player_name()
 
-		local teams = rankings.teams()
-		local bscore = (teams.blue and teams.blue.score) or 0
-		local rscore = (teams.red and teams.red.score) or 0
+		if not team_list then team_list = table.copy(ctf_teams.current_team_list) end
 
-		if math.abs(bscore - rscore) <= 100 then
-			if not ctf_teams.remembered_player[player] then
-				ctf_teams.set(player, next_team)
-				next_team = next_team == "red" and "blue" or "red"
-			else
-				ctf_teams.set(player, ctf_teams.remembered_player[player])
+		local teams = rankings.teams()
+		local tscore = {}
+		local best_score         = {s = -1, t = "none"}
+		local worst_score        = {s = math.huge, t = "none"}
+
+		for _, team in pairs(team_list) do
+			tscore[team] = (teams[team] and teams[team].score) or 0
+			if tscore[team] > best_score.s then
+				best_score         = {s = tscore[team], t = team}
 			end
-		elseif bscore > rscore then
-			-- Only allocate player to remembered team if they aren't desperately needed in the other
-			if ctf_teams.remembered_player[player] and bscore - rscore < 500 then
-				ctf_teams.set(player, ctf_teams.remembered_player[player])
+
+			if tscore[team] <= worst_score.s then
+				worst_score        = {s = tscore[team], t = team}
+			end
+		end
+
+		local remembered_team = ctf_teams.remembered_player[player]
+		if best_score.s - worst_score.s <= 100 then
+			if not remembered_team or ctf_modebase.flag_captured[remembered_team] then
+				if next_team > #team_list then
+					next_team = 1
+				end
+
+				ctf_teams.set(player, team_list[next_team])
+
+				next_team = next_team + 1
 			else
-				ctf_teams.set(player, "red")
+				ctf_teams.set(player, remembered_team)
 			end
 		else
-			-- Only allocate player to remembered team if they aren't desperately needed in the other
-			if ctf_teams.remembered_player[player] and rscore - bscore < 500 then
-				ctf_teams.set(player, ctf_teams.remembered_player[player])
+			-- Allocate player to remembered team unless they're desperately needed in the other
+			if remembered_team and not ctf_modebase.flag_captured[remembered_team] and best_score.s - worst_score.s <= 400 then
+				ctf_teams.set(player, remembered_team)
 			else
-				ctf_teams.set(player, "blue")
+				ctf_teams.set(player, worst_score.t)
 			end
 		end
 	end,
@@ -349,31 +365,44 @@ ctf_modebase.register_mode("classes", {
 
 		ctf_playertag.set(minetest.get_player_by_name(player), ctf_playertag.TYPE_ENTITY)
 	end,
-	on_flag_capture = function(player, captured_team)
+	on_flag_capture = function(player, captured_teams)
 		local pteam = ctf_teams.get(player)
 		local tcolor = ctf_teams.team[pteam].color
 
+		ctf_playertag.set(minetest.get_player_by_name(player), ctf_playertag.TYPE_ENTITY)
 		mode_classes.celebrate_team(pteam)
 
-		flag_captured = true
+		teams_left = teams_left - #captured_teams
 
+		flag_huds.untrack_capturer(player)
 		flag_huds.update()
 
-		flag_huds.clear_capturers()
+		if teams_left <= 1 then
+			match_over = true
 
-		rankings.add(player, {score = 30, flag_captures = 1})
+			flag_huds.clear_capturers()
 
-		summary.set_winner(string.format("Player %s captured",  minetest.colorize(tcolor, player)))
+			rankings.add(player, {score = 30 * #captured_teams, flag_captures = #captured_teams})
 
-		for _, pname in pairs(minetest.get_connected_players()) do
-			local match_rankings, special_rankings, rank_values, formdef = summary.summary_func()
-			formdef.title = HumanReadable(pteam) .." Team Wins!"
-			ctf_modebase.show_summary_gui(pname:get_player_name(), match_rankings, special_rankings, rank_values, formdef)
+			summary.set_winner(string.format("Player %s captured the last flag",  minetest.colorize(tcolor, player)))
+
+			for _, pname in pairs(minetest.get_connected_players()) do
+				local match_rankings, special_rankings, rank_values, formdef = summary.summary_func()
+				formdef.title = HumanReadable(pteam) .." Team Wins!"
+				ctf_modebase.show_summary_gui(pname:get_player_name(), match_rankings, special_rankings, rank_values, formdef)
+			end
+
+			minetest.after(3, ctf_modebase.start_new_match)
+		else
+			for _, captured_team in pairs(captured_teams) do
+				table.remove(team_list, table.indexof(team_list, captured_team))
+				captured_team = ctf_teams.get_team(captured_team)
+
+				for _, captured_player in pairs(captured_team) do
+					ctf_teams.set(captured_player, pteam)
+				end
+			end
 		end
-
-		ctf_playertag.set(minetest.get_player_by_name(player), ctf_playertag.TYPE_ENTITY)
-
-		minetest.after(3, ctf_modebase.start_new_match)
 	end,
 	get_chest_access = function(pname)
 		local rank = rankings.get(pname)
@@ -393,7 +422,7 @@ ctf_modebase.register_mode("classes", {
 	end,
 	summary_func = function(prev) return summary.summary_func(prev) end,
 	on_punchplayer = function(player, hitter, ...)
-		if flag_captured then return true end
+		if match_over then return true end
 
 		if not hitter:is_player() or player:get_hp() <= 0 then return end
 

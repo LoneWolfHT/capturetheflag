@@ -24,7 +24,7 @@ minetest.override_item("ctf_teams:door_steel", {
 			local newitemstack = ItemStack("ctf_teams:door_steel_"..pteam)
 			newitemstack:set_count(itemstack:get_count())
 
-			local result = old_on_place(newitemstack, placer, pointed_thing)
+			local result = minetest.registered_craftitems["ctf_teams:door_steel_" .. pteam].on_place(newitemstack, placer, pointed_thing)
 
 			if result then
 				itemstack:set_count(result:get_count())
