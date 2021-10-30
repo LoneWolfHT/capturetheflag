@@ -80,12 +80,14 @@ local function update_flag_positions(player)
 		local flag_pos = table.copy(def.flag_pos)
 
 		if not hud:exists(player, "flag_pos:"..tname) then
-			hud:add(player, "flag_pos:"..tname, {
-				hud_elem_type = "waypoint",
-				waypoint_text = HumanReadable(tname).."'s base",
-				color = ctf_teams.team[tname].color_hex,
-				world_pos = flag_pos,
-			})
+			if not ctf_modebase.flag_captured[tname] then
+				hud:add(player, "flag_pos:"..tname, {
+					hud_elem_type = "waypoint",
+					waypoint_text = HumanReadable(tname).."'s base",
+					color = ctf_teams.team[tname].color_hex,
+					world_pos = flag_pos,
+				})
+			end
 		elseif ctf_modebase.flag_captured[tname] then
 			hud:remove(player, "flag_pos:"..tname)
 		else

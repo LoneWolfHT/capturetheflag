@@ -21,6 +21,7 @@ local crafts, classes = ctf_core.include_files(
 	"classes.lua"
 )
 
+local FLAG_MESSAGE_COLOR = "#d9b72a"
 local FLAG_CAPTURE_TIMER = 60 * 3
 
 local function calculate_killscore(player)
@@ -350,6 +351,8 @@ ctf_modebase.register_mode("classes", {
 		local tcolor = pteam and ctf_teams.team[pteam].color or "#FFF"
 		ctf_playertag.set(minetest.get_player_by_name(player), ctf_playertag.TYPE_BUILTIN, tcolor)
 
+		minetest.chat_send_all(minetest.colorize(tcolor, player) .. minetest.colorize(FLAG_MESSAGE_COLOR, " has taken " .. HumanReadable(teamname) .. "'s flag"))
+
 		mode_classes.celebrate_team(ctf_teams.get(player))
 
 		rankings.add(player, {score = 20, flag_attempts = 1})
@@ -358,24 +361,32 @@ ctf_modebase.register_mode("classes", {
 
 		flag_huds.track_capturer(player, FLAG_CAPTURE_TIMER)
 	end,
-	on_flag_drop = function(player, teamname)
+	on_flag_drop = function(player, teamnames)
+		local tcolor = ctf_teams.team[ctf_teams.get(player)].color or "#FFF"
+
 		flag_huds.update()
 
 		flag_huds.untrack_capturer(player)
+		
+		minetest.chat_send_all(minetest.colorize(tcolor, player) .. minetest.colorize(FLAG_MESSAGE_COLOR, " has dropped the flag of team(s) " .. HumanReadable(teamnames)))
 
 		ctf_playertag.set(minetest.get_player_by_name(player), ctf_playertag.TYPE_ENTITY)
 	end,
 	on_flag_capture = function(player, captured_teams)
 		local pteam = ctf_teams.get(player)
-		local tcolor = ctf_teams.team[pteam].color
+		local tcolor = ctf_teams.team[pteam].color or "#FFF"
 
 		ctf_playertag.set(minetest.get_player_by_name(player), ctf_playertag.TYPE_ENTITY)
 		mode_classes.celebrate_team(pteam)
 
+		minetest.chat_send_all(minetest.colorize(tcolor, player) .. minetest.colorize(FLAG_MESSAGE_COLOR, " has captured the flag of team(s) " .. HumanReadable(captured_teams)))
+
 		teams_left = teams_left - #captured_teams
 
-		flag_huds.untrack_capturer(player)
-		flag_huds.update()
+		minetest.after(0, function() -- flag_huds won't see the team changes until after the capture callbacks run
+			flag_huds.update()
+			flag_huds.untrack_capturer(player)
+		end)
 
 		if teams_left <= 1 then
 			match_over = true
