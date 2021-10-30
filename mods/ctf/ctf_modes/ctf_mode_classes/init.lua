@@ -227,6 +227,8 @@ ctf_modebase.register_mode("classes", {
 		ctf_map.place_chests(mapdef)
 	end,
 	on_match_end = function()
+		team_list = nil
+
 		summary.on_match_end()
 		rankings.on_match_end()
 
