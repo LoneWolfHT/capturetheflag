@@ -39,7 +39,7 @@ minetest.override_item("ctf_teams:door_steel", {
 
 local old_handle = minetest.handle_node_drops
 minetest.handle_node_drops = function(pos, drops, digger)
-	if drops and drops[1]:match("ctf_teams:door_steel_") then
+	if #drops > 0 and drops[1]:match("ctf_teams:door_steel_") then
 		return old_handle(pos, {"ctf_teams:door_steel"}, digger)
 	end
 
