@@ -201,8 +201,6 @@ ctf_modebase.register_mode("classes", {
 
 		ctf_cosmetics.get_colored_skin = old_get_colored_skin
 
-		flag_huds.clear_huds()
-
 		classes.finish()
 	end,
 	on_new_match = function(mapdef)
@@ -234,7 +232,7 @@ ctf_modebase.register_mode("classes", {
 
 		ctf_modebase.bounties:on_match_end()
 
-		flag_huds.clear_capturers()
+		flag_huds.on_match_end()
 	end,
 	allocate_player = function(player)
 		player = player:get_player_name()
@@ -362,14 +360,10 @@ ctf_modebase.register_mode("classes", {
 
 		rankings.add(player, {score = 20, flag_attempts = 1})
 
-		flag_huds.update()
-
 		flag_huds.track_capturer(player, FLAG_CAPTURE_TIMER)
 	end,
 	on_flag_drop = function(player, teamnames)
 		local tcolor = ctf_teams.team[ctf_teams.get(player)].color or "#FFF"
-
-		flag_huds.update()
 
 		flag_huds.untrack_capturer(player)
 
@@ -394,15 +388,10 @@ ctf_modebase.register_mode("classes", {
 
 		teams_left = teams_left - #captured_teams
 
-		minetest.after(0, function() -- flag_huds won't see the team changes until after the capture callbacks run
-			flag_huds.update()
-			flag_huds.untrack_capturer(player)
-		end)
+		flag_huds.untrack_capturer(player)
 
 		if teams_left <= 1 then
 			match_over = true
-
-			flag_huds.clear_capturers()
 
 			rankings.add(player, {score = 30 * #captured_teams, flag_captures = #captured_teams})
 

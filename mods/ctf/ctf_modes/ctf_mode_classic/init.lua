@@ -174,8 +174,6 @@ ctf_modebase.register_mode("classic", {
 	on_mode_end = function()
 		ctf_modebase.bounties.bounty_reward_func = old_bounty_reward_func
 		ctf_modebase.bounties.get_next_bounty = old_get_next_bounty
-
-		flag_huds.clear_huds()
 	end,
 	on_new_match = function(mapdef)
 		flag_captured = false
@@ -197,7 +195,7 @@ ctf_modebase.register_mode("classic", {
 
 		ctf_modebase.bounties:on_match_end()
 
-		flag_huds.clear_capturers()
+		flag_huds.on_match_end()
 	end,
 	allocate_player = function(player)
 		player = player:get_player_name()
@@ -309,13 +307,9 @@ ctf_modebase.register_mode("classic", {
 
 		rankings.add(player, {score = 20, flag_attempts = 1})
 
-		flag_huds.update()
-
 		flag_huds.track_capturer(player, FLAG_CAPTURE_TIMER)
 	end,
 	on_flag_drop = function(player, teamname)
-		flag_huds.update()
-
 		flag_huds.untrack_capturer(player)
 
 		ctf_playertag.set(minetest.get_player_by_name(player), ctf_playertag.TYPE_ENTITY)
@@ -328,9 +322,7 @@ ctf_modebase.register_mode("classic", {
 
 		flag_captured = true
 
-		flag_huds.update()
-
-		flag_huds.clear_capturers()
+		flag_huds.untrack_capturer(player)
 
 		rankings.add(player, {score = 30, flag_captures = 1})
 

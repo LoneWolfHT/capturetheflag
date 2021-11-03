@@ -56,24 +56,7 @@ local function get_status(you)
 	return status
 end
 
-local player_timers
-local player_timer_count = 0
-local function untrack_capturer(player)
-	player = PlayerName(player)
-
-	if hud:get(player, "flag_timer") then
-		hud:remove(player, "flag_timer")
-	end
-
-	if player_timers and player_timers[player] then
-		player_timers[player] = nil
-		player_timer_count = player_timer_count - 1
-	end
-
-	if player_timer_count == 0 then
-		player_timers = nil
-	end
-end
+local player_timers = nil
 
 local function update_flag_positions(player)
 	for tname, def in pairs(ctf_map.current_map.teams) do
@@ -129,7 +112,6 @@ return {
 
 		if not player_timers[player] then
 			player_timers[player] = time
-			player_timer_count = player_timer_count + 1
 
 			hud:add(player, "flag_timer", {
 				hud_elem_type = "text",
@@ -142,13 +124,19 @@ return {
 			player_timers[player] = time -- Player already has a flag, just reset their capture timer
 		end
 	end,
-	untrack_capturer = untrack_capturer,
-	clear_capturers = function()
-		if not player_timers then return end
+	untrack_capturer = function(player)
+		player = PlayerName(player)
 
-		for pname in pairs(player_timers) do
-			untrack_capturer(pname)
+		if hud:get(player, "flag_timer") then
+			hud:remove(player, "flag_timer")
 		end
+
+		if player_timers and player_timers[player] then
+			player_timers[player] = nil
+		end
+	end,
+	on_match_end = function()
+		hud:clear_all()
 
 		player_timers = nil
 	end,
@@ -169,14 +157,5 @@ return {
 		end
 
 		update_flag_positions(player)
-	end,
-	update = function()
-		for _, player in pairs(minetest.get_connected_players()) do
-			hud:change(player, "flag_status", get_status(player:get_player_name()))
-			update_flag_positions(player)
-		end
-	end,
-	clear_huds = function()
-		hud:clear_all()
 	end,
 }
