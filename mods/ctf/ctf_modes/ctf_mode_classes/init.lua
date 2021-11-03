@@ -209,8 +209,6 @@ ctf_modebase.register_mode("classes", {
 		match_over = false
 		teams_left = table.count(mapdef.teams)
 
-		classes.on_new_match()
-
 		ctf_modebase.build_timer.start(mapdef, 60 * 1.5, function()
 			summary.on_match_start()
 			ctf_modebase.bounties:on_match_start()
@@ -231,6 +229,8 @@ ctf_modebase.register_mode("classes", {
 
 		summary.on_match_end()
 		rankings.on_match_end()
+
+		classes.on_match_end()
 
 		ctf_modebase.bounties:on_match_end()
 
@@ -353,7 +353,10 @@ ctf_modebase.register_mode("classes", {
 		local tcolor = pteam and ctf_teams.team[pteam].color or "#FFF"
 		ctf_playertag.set(minetest.get_player_by_name(player), ctf_playertag.TYPE_BUILTIN, tcolor)
 
-		minetest.chat_send_all(minetest.colorize(tcolor, player) .. minetest.colorize(FLAG_MESSAGE_COLOR, " has taken " .. HumanReadable(teamname) .. "'s flag"))
+		minetest.chat_send_all(
+			minetest.colorize(tcolor, player) ..
+			minetest.colorize(FLAG_MESSAGE_COLOR, " has taken " .. HumanReadable(teamname) .. "'s flag")
+		)
 
 		mode_classes.celebrate_team(ctf_teams.get(player))
 
@@ -369,8 +372,11 @@ ctf_modebase.register_mode("classes", {
 		flag_huds.update()
 
 		flag_huds.untrack_capturer(player)
-		
-		minetest.chat_send_all(minetest.colorize(tcolor, player) .. minetest.colorize(FLAG_MESSAGE_COLOR, " has dropped the flag of team(s) " .. HumanReadable(teamnames)))
+
+		minetest.chat_send_all(
+			minetest.colorize(tcolor, player) ..
+			minetest.colorize(FLAG_MESSAGE_COLOR, " has dropped the flag of team(s) " .. HumanReadable(teamnames))
+		)
 
 		ctf_playertag.set(minetest.get_player_by_name(player), ctf_playertag.TYPE_ENTITY)
 	end,
@@ -381,7 +387,10 @@ ctf_modebase.register_mode("classes", {
 		ctf_playertag.set(minetest.get_player_by_name(player), ctf_playertag.TYPE_ENTITY)
 		mode_classes.celebrate_team(pteam)
 
-		minetest.chat_send_all(minetest.colorize(tcolor, player) .. minetest.colorize(FLAG_MESSAGE_COLOR, " has captured the flag of team(s) " .. HumanReadable(captured_teams)))
+		minetest.chat_send_all(
+			minetest.colorize(tcolor, player) ..
+			minetest.colorize(FLAG_MESSAGE_COLOR, " has captured the flag of team(s) " .. HumanReadable(captured_teams))
+		)
 
 		teams_left = teams_left - #captured_teams
 

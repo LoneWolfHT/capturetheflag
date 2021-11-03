@@ -187,7 +187,10 @@ function ctf_map.save_map(mapmeta)
 
 			if not flagpos then
 				flagpos = def.flag_pos
-				minetest.chat_send_all(minetest.colorize("red", "Failed to find flag for team "..id..". Node at given position: "..dump(minetest.get_node(flagpos).name)))
+				minetest.chat_send_all(minetest.colorize("red",
+					"Failed to find flag for team " .. id ..
+					". Node at given position: " .. dump(minetest.get_node(flagpos).name)
+				))
 			end
 
 			mapmeta.teams[id].flag_pos = vector.subtract(
