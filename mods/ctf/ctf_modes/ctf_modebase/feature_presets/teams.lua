@@ -16,7 +16,7 @@ return {
 		teams_left = #team_list
 	end,
 	allocate_player = function(player)
-		player = player:get_player_name()
+		player = PlayerName(player)
 
 		local teams = rankings.teams()
 		local best_score = nil
@@ -117,12 +117,12 @@ return {
 
 			return true
 		else
-			for _, captured_team in pairs(teamnames) do
-				table.remove(team_list, table.indexof(team_list, captured_team))
-				captured_team = ctf_teams.get_team(captured_team)
+			for _, lost_team in ipairs(teamnames) do
+				table.remove(team_list, table.indexof(team_list, lost_team))
+				lost_team = ctf_teams.get_team(lost_team)
 
-				for _, captured_player in pairs(captured_team) do
-					ctf_teams.set(captured_player, pteam)
+				for _, lost_player in ipairs(lost_team) do
+					ctf_teams.allocate_player(lost_player)
 				end
 			end
 		end

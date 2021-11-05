@@ -81,24 +81,52 @@ end
 
 local player_timers = nil
 
-local function get_base_label(tname)
-	local team = HumanReadable(tname)
-	if ctf_modebase.flag_captured[tname] then
-		return team .. "'s flag (captured)"
-	elseif ctf_modebase.flag_taken[tname] then
-		return team .. "'s flag (taken)"
+local function update_player(player)
+	local status = get_flag_status(player:get_player_name())
+
+	if hud:exists(player, "flag_status") then
+		hud:change(player, "flag_status", get_flag_status(player:get_player_name()))
 	else
-		return team .. "'s flag"
+		hud:add(player, "flag_status", {
+			hud_elem_type = "text",
+			position = {x = 1, y = 0},
+			offset = {x = -6, y = 6},
+			alignment = {x = "left", y = "down"},
+			text = status.text,
+			color = status.color,
+		})
+	end
+
+	for tname, def in pairs(ctf_map.current_map.teams) do
+		local hud_label = "flag_pos:" .. tname
+
+		local base_label = HumanReadable(tname) .. "'s flag"
+		if ctf_modebase.flag_taken[tname] then
+			base_label = base_label .. " (taken)"
+		end
+
+		if hud:exists(player, hud_label) then
+			if not ctf_modebase.flag_captured[tname] then
+				hud:change(player, hud_label, {waypoint_text = base_label})
+			else
+				hud:remove(player, hud_label)
+			end
+		else
+			if not ctf_modebase.flag_captured[tname] then
+				hud:add(player, hud_label, {
+					hud_elem_type = "waypoint",
+					waypoint_text = base_label,
+					color = ctf_teams.team[tname].color_hex,
+					world_pos = def.flag_pos,
+				})
+			end
+		end
 	end
 end
 
 local function update()
 	for _, player in pairs(minetest.get_connected_players()) do
-		hud:change(player, "flag_status", get_flag_status(player:get_player_name()))
-
-		for tname in pairs(ctf_map.current_map.teams) do
-			hud:change(player, "flag_pos:" .. tname, {waypoint_text = get_base_label(tname)})
-		end
+		update_player(player)
 	end
 end
 
@@ -166,24 +194,6 @@ return {
 		player_timers = nil
 	end,
 	on_allocplayer = function(player)
-		local status = get_flag_status(player:get_player_name())
-
-		hud:add(player, "flag_status", {
-			hud_elem_type = "text",
-			position = {x = 1, y = 0},
-			offset = {x = -6, y = 6},
-			alignment = {x = "left", y = "down"},
-			text = status.text,
-			color = status.color,
-		})
-
-		for tname, def in pairs(ctf_map.current_map.teams) do
-			hud:add(player, "flag_pos:" .. tname, {
-				hud_elem_type = "waypoint",
-				waypoint_text = get_base_label(tname),
-				color = ctf_teams.team[tname].color_hex,
-				world_pos = def.flag_pos,
-			})
-		end
+		update_player(player)
 	end,
 }
