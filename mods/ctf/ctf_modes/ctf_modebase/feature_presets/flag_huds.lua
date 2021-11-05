@@ -58,25 +58,21 @@ end
 
 local player_timers = nil
 
-local function update_flag_positions(player)
-	for tname, def in pairs(ctf_map.current_map.teams) do
-		local flag_pos = table.copy(def.flag_pos)
+local function get_base_label(tname)
+	local team = HumanReadable(tname)
+	if ctf_modebase.flag_captured[tname] then
+		return team .. "'s flag (captured)"
+	elseif ctf_modebase.flag_taken[tname] then
+		return team .. "'s flag (taken)"
+	else
+		return team .. "'s flag"
+	end
+end
 
-		if not hud:exists(player, "flag_pos:"..tname) then
-			if not ctf_modebase.flag_captured[tname] then
-				hud:add(player, "flag_pos:"..tname, {
-					hud_elem_type = "waypoint",
-					waypoint_text = HumanReadable(tname).."'s base",
-					color = ctf_teams.team[tname].color_hex,
-					world_pos = flag_pos,
-				})
-			end
-		elseif ctf_modebase.flag_captured[tname] then
-			hud:remove(player, "flag_pos:"..tname)
-		else
-			hud:change(player, "flag_pos:"..tname, {
-				world_pos = flag_pos,
-			})
+local function update()
+	for _, player in pairs(minetest.get_connected_players()) do
+		for tname in pairs(ctf_map.current_map.teams) do
+			hud:change(player, "flag_pos:" .. tname, {waypoint_text = get_base_label(tname)})
 		end
 	end
 end
@@ -123,6 +119,8 @@ return {
 		else
 			player_timers[player] = time -- Player already has a flag, just reset their capture timer
 		end
+
+		update()
 	end,
 	untrack_capturer = function(player)
 		player = PlayerName(player)
@@ -134,6 +132,8 @@ return {
 		if player_timers and player_timers[player] then
 			player_timers[player] = nil
 		end
+
+		update()
 	end,
 	on_match_end = function()
 		hud:clear_all()
@@ -156,6 +156,13 @@ return {
 			hud:change(player, "flag_status", status)
 		end
 
-		update_flag_positions(player)
+		for tname, def in pairs(ctf_map.current_map.teams) do
+			hud:add(player, "flag_pos:" .. tname, {
+				hud_elem_type = "waypoint",
+				waypoint_text = get_base_label(tname),
+				color = ctf_teams.team[tname].color_hex,
+				world_pos = def.flag_pos,
+			})
+		end
 	end,
 }

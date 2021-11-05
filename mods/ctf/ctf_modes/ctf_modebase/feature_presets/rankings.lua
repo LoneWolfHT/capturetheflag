@@ -18,8 +18,18 @@ local function add_recent(storage, key, amounts)
 end
 
 local function clear_recent(storage, key)
-	if storage[key] and #storage[key] then
-		storage[key] = nil
+	if storage[key] then
+		local count = 0
+
+		for k in pairs(storage[key]) do
+			if k:sub(1, 1) ~= "_" then
+				count = count + 1
+			end
+		end
+
+		if count == 0 then
+			storage[key] = nil
+		end
 	end
 end
 

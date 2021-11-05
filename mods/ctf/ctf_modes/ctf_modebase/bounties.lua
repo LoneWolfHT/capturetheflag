@@ -1,10 +1,9 @@
 local CHAT_COLOR = "orange"
-
 local timer = nil
+local bounties = {}
 
-local self = {
-	bounties = {},
-	new = function(self, pname, pteam, rewards)
+ctf_modebase.bounties = {
+	new = function(pname, pteam, rewards)
 		pname = PlayerName(pname)
 		local reward_str = ""
 		local current_teams = ctf_map.current_map.teams
@@ -24,33 +23,33 @@ local self = {
 			end
 		end
 
-		self.bounties[pteam] = {name = pname, rewards = rewards, msg = bounty_message}
+		bounties[pteam] = {name = pname, rewards = rewards, msg = bounty_message}
 	end,
-	player_has = function(self, pname)
+	player_has = function(pname)
 		pname = PlayerName(pname)
 		local pteam = ctf_teams.get(pname)
 
 		if pteam then
-			if self.bounties[pteam] and self.bounties[pteam].name == pname then
-				return self.bounties[pteam].rewards
+			if bounties[pteam] and bounties[pteam].name == pname then
+				return bounties[pteam].rewards
 			end
 		end
 
 		return false
 	end,
-	remove = function(self, pname)
+	remove = function(pname)
 		pname = PlayerName(pname)
 		local pteam = ctf_teams.get(pname)
 
 		minetest.chat_send_all(minetest.colorize(CHAT_COLOR, string.format("[Bounty] %s is no longer bountied", pname)))
-		self.bounties[pteam] = nil
+		bounties[pteam] = nil
 	end,
-	on_player_join = function(self, pname)
+	on_player_join = function(pname)
 		pname = PlayerName(pname)
 		local pteam = ctf_teams.get(pname)
 		local output = {}
 
-		for tname, bounty in pairs(self.bounties) do
+		for tname, bounty in pairs(bounties) do
 			if pteam ~= tname then
 				table.insert(output, bounty.msg)
 			end
@@ -65,7 +64,7 @@ local self = {
 	end,
 	reassign = function(self)
 		local teams = ctf_teams.get_teams()
-		for tname in pairs(self.bounties) do
+		for tname in pairs(bounties) do
 			if not teams[tname] then
 				teams[tname] = {}
 			end
@@ -73,8 +72,8 @@ local self = {
 
 		for tname, team_members in pairs(teams) do
 			local old = nil
-			if self.bounties[tname] then
-				old = self.bounties[tname].name
+			if bounties[tname] then
+				old = bounties[tname].name
 			end
 
 			local new = nil
@@ -94,7 +93,7 @@ local self = {
 		end
 	end,
 	on_match_end = function(self)
-		self.bounties = {}
+		bounties = {}
 		timer = nil
 	end,
 	bounty_reward_func = function()
@@ -114,9 +113,7 @@ minetest.register_globalstep(function(dtime)
 
 	if timer <= 0 then
 		timer = nil
-		self:reassign()
-		self:on_match_start()
+		ctf_modebase.bounties.reassign()
+		ctf_modebase.bounties.on_match_start()
 	end
 end)
-
-return self

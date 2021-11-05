@@ -146,7 +146,7 @@ function ctf_modebase.start_new_match(show_form, new_mode, specific_map)
 	new_specific_map = specific_map
 
 	if ctf_modebase.current_mode then
-		ctf_modebase.modes[ctf_modebase.current_mode].on_match_end()
+		ctf_modebase:get_current_mode().on_match_end()
 	end
 
 	if new_mode then

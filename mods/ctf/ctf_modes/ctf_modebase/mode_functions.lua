@@ -31,13 +31,6 @@ add_mode_func(ctf_modebase.register_on_new_match, "on_new_match", true)
 add_mode_func(ctf_modebase.register_on_new_mode, "on_mode_start", true)
 -- on_mode_end is called in match.lua's ctf_modebase.start_new_match()
 
-add_mode_func(ctf_modebase.register_on_flag_take       , "on_flag_take"       )
-add_mode_func(ctf_modebase.register_on_flag_drop       , "on_flag_drop"       )
-add_mode_func(ctf_modebase.register_on_flag_rightclick , "on_flag_rightclick" )
-add_mode_func(ctf_modebase.register_on_flag_capture    , "on_flag_capture"    )
-
-add_mode_func(ctf_modebase.register_on_treasurefy_node, "on_treasurefy_node")
-
 add_mode_func(ctf_healing.register_on_heal, "on_healplayer")
 
 ctf_teams.allocate_player = function(...)
