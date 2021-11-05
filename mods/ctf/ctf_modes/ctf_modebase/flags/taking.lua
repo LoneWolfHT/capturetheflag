@@ -1,23 +1,15 @@
 ctf_modebase.register_on_new_match(function(mapdef, old_mapdef)
 	ctf_modebase.taken_flags = {}
-	ctf_modebase.team_flag_takers = {}
 	ctf_modebase.flag_taken = {}
 	ctf_modebase.flag_captured = {}
-
-	for tname in pairs(mapdef.teams) do
-		ctf_modebase.team_flag_takers[tname] = {}
-		ctf_modebase.flag_taken[tname] = false
-	end
 end)
 
 function ctf_modebase.drop_flags(pname)
 	local flagteams = ctf_modebase.taken_flags[pname]
 	if not flagteams then return end
 
-	local pteam = ctf_teams.get(pname)
-
 	for _, flagteam in pairs(flagteams) do
-		ctf_modebase.flag_taken[flagteam] = false
+		ctf_modebase.flag_taken[flagteam] = nil
 
 		local fpos = vector.offset(ctf_map.current_map.teams[flagteam].flag_pos, 0, 1, 0)
 
@@ -32,7 +24,6 @@ function ctf_modebase.drop_flags(pname)
 	end
 
 	ctf_modebase.taken_flags[pname] = nil
-	ctf_modebase.team_flag_takers[pteam][pname] = nil
 
 	ctf_modebase:get_current_mode().on_flag_drop(pname, flagteams)
 end
@@ -62,11 +53,9 @@ function ctf_modebase.flag_on_punch(puncher, nodepos, node)
 
 		if not ctf_modebase.taken_flags[pname] then
 			ctf_modebase.taken_flags[pname] = {}
-			ctf_modebase.team_flag_takers[pteam][pname] = ctf_modebase.taken_flags[pname]
 		end
-
 		table.insert(ctf_modebase.taken_flags[pname], target_team)
-		ctf_modebase.flag_taken[target_team] = pname
+		ctf_modebase.flag_taken[target_team] = {p=pname, t=pteam}
 
 		ctf_modebase:get_current_mode().on_flag_take(pname, target_team)
 
@@ -77,9 +66,9 @@ function ctf_modebase.flag_on_punch(puncher, nodepos, node)
 			minetest.chat_send_player(pname, "That's your flag!")
 		else
 			ctf_modebase.taken_flags[pname] = nil
-			ctf_modebase.team_flag_takers[pteam][pname] = nil
 
 			for _, flagteam in pairs(flagteams) do
+				ctf_modebase.flag_taken[flagteam] = nil
 				ctf_modebase.flag_captured[flagteam] = true
 			end
 

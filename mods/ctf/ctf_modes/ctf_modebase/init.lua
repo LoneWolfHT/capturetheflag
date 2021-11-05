@@ -45,7 +45,6 @@ ctf_core.include_files(
 	"give_initial_stuff.lua",
 	"treasure.lua",
 	"register.lua",
-	"commands.lua",
 	"flags/nodes.lua",
 	"flags/taking.lua",
 	"match.lua",
