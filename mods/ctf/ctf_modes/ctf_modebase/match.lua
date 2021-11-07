@@ -162,10 +162,16 @@ function ctf_modebase.start_new_match(show_form, new_mode, specific_map)
 end
 
 function ctf_modebase.show_modechoose_form(player)
+	local modenames = {}
+
+	for modename in pairs(ctf_modebase.modes) do
+		table.insert(modenames, modename)
+	end
+	table.sort(modenames)
+
 	local elements = {}
 	local idx = 0
-
-	for modename, def in pairs(ctf_modebase.modes) do
+	for _, modename in ipairs(modenames) do
 		elements[modename] = {
 			type = "button",
 			label = HumanReadable(modename),

@@ -54,7 +54,8 @@ ctf_core.include_files(
 	"respawn_delay.lua",
 	"markers.lua",
 	"bounties.lua",
-	"build_timer.lua"
+	"build_timer.lua",
+	"update_wear.lua"
 )
 
 ctf_modebase.feature_presets.rankings = ctf_core.include_files("feature_presets/rankings.lua")
