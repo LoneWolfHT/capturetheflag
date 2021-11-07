@@ -62,7 +62,6 @@ ctf_modebase.register_mode("classes", {
 	},
 	crafts = crafts,
 	physics = {sneak_glitch = true, new_move = false},
-	commands = {"ctf_start", "rank", "r"},
 
 	is_bound_item = function(_, itemstack)
 		local iname = itemstack:get_name()

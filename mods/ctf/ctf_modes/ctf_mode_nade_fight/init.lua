@@ -1,4 +1,4 @@
-mode_classic = {
+mode_nade_fight = {
 	SUMMARY_RANKS = {
 		_sort = "score",
 		"score",
@@ -9,8 +9,8 @@ mode_classic = {
 	}
 }
 
-local rankings = ctf_modebase.feature_presets.rankings("classic", mode_classic)
-local summary = ctf_modebase.feature_presets.summary(mode_classic, rankings)
+local rankings = ctf_modebase.feature_presets.rankings("nade_fight", mode_nade_fight)
+local summary = ctf_modebase.feature_presets.summary(mode_nade_fight, rankings)
 local flag_huds = ctf_modebase.feature_presets.flag_huds
 local bounties = ctf_modebase.feature_presets.bounties(rankings)
 local teams = ctf_modebase.feature_presets.teams(rankings, summary, flag_huds)
@@ -49,7 +49,6 @@ ctf_modebase.register_mode("nade_fight", {
 	},
 	crafts = {},
 	physics = {sneak_glitch = true, new_move = false},
-	commands = {"ctf_start", "rank", "r"},
 
 	is_bound_item = function(_, itemstack)
 		if itemstack:get_name() == "ctf_mode_nade_fight:grenade" then

@@ -56,7 +56,6 @@ ctf_modebase.register_mode("classic", {
 	},
 	crafts = crafts,
 	physics = {sneak_glitch = true, new_move = false},
-	commands = {"ctf_start", "rank", "r"},
 
 	on_mode_start = function()
 		ctf_modebase.bounties.bounty_reward_func = bounties.bounty_reward_func
