@@ -20,10 +20,6 @@ ctf_core.include_files("tool.lua")
 local old_bounty_reward_func = ctf_modebase.bounties.bounty_reward_func
 local old_get_next_bounty = ctf_modebase.bounties.get_next_bounty
 ctf_modebase.register_mode("nade_fight", {
-	map_whitelist = {
-		"bridge", "caverns", "coast", "iceage", "two_hills", "plains", "desert_spikes", "river_valley", "plain_battle",
-		"karsthafen", "abandoned_isles", "ahkmenrah_pyramids", "capture_legend", "moon",
-	},
 	treasures = {
 		["default:ladder_wood"] = {           max_count = 20, rarity = 0.3, max_stacks = 5},
 		["default:torch" ] = {                max_count = 20, rarity = 0.3, max_stacks = 5},

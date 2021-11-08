@@ -122,5 +122,31 @@ function ctf_modebase.register_chatcommand(modename, name, def)
 	ctf_modebase.register_chatcommand_alias(modename, name, nil, def)
 end
 
+function ctf_modebase.match_mode(param)
+	local _, _, opt_param, mode_param = string.find(param, "^(.*) +mode:(.*)$")
+
+	if not mode_param then
+		_, _, mode_param, opt_param = string.find(param, "^mode:(.*) +(.*)$")
+	end
+
+	if not mode_param then
+		_, _, mode_param = string.find(param, "^mode:(.*)$")
+		opt_param = nil
+	end
+
+	if not mode_param then
+		opt_param = param
+	end
+
+	if not mode_param or mode_param == "" then
+		mode_param = nil
+	end
+	if not opt_param or opt_param == "" then
+		opt_param = nil
+	end
+
+	return opt_param, mode_param
+end
+
 --- end
 --

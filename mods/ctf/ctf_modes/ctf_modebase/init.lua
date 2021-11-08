@@ -41,6 +41,7 @@ ctf_modebase = {
 ctf_gui.init()
 
 ctf_core.include_files(
+	"map_catalog.lua",
 	"summary_gui.lua",
 	"give_initial_stuff.lua",
 	"treasure.lua",
@@ -70,7 +71,7 @@ if ctf_core.settings.server_mode == "play" then
 	minetest.register_on_joinplayer(function(player)
 		if not match_started then
 			ctf_modebase.current_mode_matches = ctf_modebase.MAPS_PER_MODE
-			ctf_modebase.start_new_match(true)
+			ctf_modebase.start_new_match()
 			match_started = true
 		end
 

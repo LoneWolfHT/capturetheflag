@@ -72,7 +72,10 @@ function ctf_map.show_map_editor(player)
 					end)
 
 					minetest.after(0.5, function()
-						ctf_map.place_map(table.indexof(dirlist, fields.currentmaps), fields.currentmaps, function(map)
+						local idx = table.indexof(dirlist, fields.currentmaps)
+						local map = ctf_map.load_map_meta(idx, fields.currentmaps)
+
+						ctf_map.place_map(map, function()
 							minetest.after(2, function()
 								ctf_map.announce_map(map)
 
