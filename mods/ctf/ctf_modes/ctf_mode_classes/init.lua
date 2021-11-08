@@ -36,7 +36,8 @@ local old_get_colored_skin = ctf_cosmetics.get_colored_skin
 ctf_modebase.register_mode("classes", {
 	map_whitelist = {
 		"bridge", "caverns", "coast", "iceage", "two_hills", "plains", "desert_spikes", "river_valley", "plain_battle",
-		"karsthafen", "abandoned_isles", "ahkmenrah_pyramids", "capture_legend", "moon",
+		"karsthafen", "abandoned_isles", "ahkmenrah_pyramids", "capture_legend", "moon", "big_ocean", "green_hills",
+		"mayan_legend", "mini_village", "nether_kingdom", "snowland", "the_wall",
 	},
 	treasures = {
 		["default:ladder_wood"] = {                max_count = 20, rarity = 0.3, max_stacks = 5},
