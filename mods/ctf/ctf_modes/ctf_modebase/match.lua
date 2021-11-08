@@ -282,7 +282,7 @@ end
 minetest.register_chatcommand("ctf_next", {
 	description = "Skip to a new match.",
 	privs = {ctf_admin = true},
-	params = "[<mode:technical modename> <technical mapname>]",
+	params = "<mode:technical modename> <technical mapname>",
 	func = function(name, param)
 		local map = nil
 		local map_name, mode = ctf_modebase.match_mode(param)

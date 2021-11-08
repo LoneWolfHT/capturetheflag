@@ -35,6 +35,14 @@ local classes = {
 	}
 }
 
+local function dist_from_flag(player)
+	local tname = ctf_teams.get(player)
+
+	if not tname then return 0 end
+
+	return vector.distance(ctf_map.current_map.teams[tname].flag_pos, PlayerObj(player):get_pos())
+end
+
 --
 --- Knight Sword
 --
@@ -301,7 +309,7 @@ return {
 		end
 
 		if not cooldowns:get(player) then
-			if mode_classes.dist_from_flag(player) > 5 then
+			if dist_from_flag(player) > 5 then
 				minetest.chat_send_player(player:get_player_name(), "You can only change class at your flag!")
 				return
 			end
@@ -327,7 +335,7 @@ return {
 				label = "Choose Class",
 				pos = {x = ctf_gui.ELEM_SIZE.x + 0.5, y = 0.5},
 				func = function(playername, fields, field_name)
-					if mode_classes.dist_from_flag(player) <= 5 then
+					if dist_from_flag(player) <= 5 then
 						cooldowns:set(player, CLASS_SWITCH_COOLDOWN)
 						self.set(player, class_list[selected])
 					end

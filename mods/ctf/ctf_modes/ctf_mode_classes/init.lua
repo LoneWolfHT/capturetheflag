@@ -1,34 +1,13 @@
-ctf_gui.init()
-
-mode_classes = {
-	SUMMARY_RANKS = {
-		_sort = "score",
-		"score",
-		"flag_captures", "flag_attempts",
-		"kills", "kill_assists", "bounty_kills",
-		"deaths",
-		"hp_healed"
-	}
-}
-
-local rankings = ctf_modebase.feature_presets.rankings("classes", mode_classes)
-local summary = ctf_modebase.feature_presets.summary(mode_classes, rankings)
+local rankings = ctf_rankings.init()
+local recent_rankings = ctf_modebase.feature_presets.recent_rankings(rankings)
 local flag_huds = ctf_modebase.feature_presets.flag_huds
-local bounties = ctf_modebase.feature_presets.bounties(rankings)
-local teams = ctf_modebase.feature_presets.teams(rankings, summary, flag_huds)
+local bounties = ctf_modebase.feature_presets.bounties(recent_rankings)
+local teams = ctf_modebase.feature_presets.teams(recent_rankings, flag_huds)
 
 local crafts, classes = ctf_core.include_files(
 	"crafts.lua",
 	"classes.lua"
 )
-
-function mode_classes.dist_from_flag(player)
-	local tname = ctf_teams.get(player)
-
-	if not tname then return 0 end
-
-	return vector.distance(ctf_map.current_map.teams[tname].flag_pos, PlayerObj(player):get_pos())
-end
 
 local old_bounty_reward_func = ctf_modebase.bounties.bounty_reward_func
 local old_get_next_bounty = ctf_modebase.bounties.get_next_bounty
@@ -58,6 +37,16 @@ ctf_modebase.register_mode("classes", {
 	},
 	crafts = crafts,
 	physics = {sneak_glitch = true, new_move = false},
+	rankings = rankings,
+	recent_rankings = recent_rankings,
+	summary_ranks = {
+		_sort = "score",
+		"score",
+		"flag_captures", "flag_attempts",
+		"kills", "kill_assists", "bounty_kills",
+		"deaths",
+		"hp_healed"
+	},
 
 	is_bound_item = function(_, itemstack)
 		local iname = itemstack:get_name()
@@ -90,7 +79,7 @@ ctf_modebase.register_mode("classes", {
 		teams.on_new_match()
 
 		ctf_modebase.build_timer.start(mapdef, 60 * 1.5, function()
-			summary.on_match_start()
+			ctf_modebase.summary.on_match_start()
 			ctf_modebase.bounties.on_match_start()
 		end)
 
@@ -107,8 +96,8 @@ ctf_modebase.register_mode("classes", {
 	on_match_end = function()
 		teams.on_match_end()
 
-		summary.on_match_end()
-		rankings.on_match_end()
+		ctf_modebase.summary.on_match_end()
+		recent_rankings.on_match_end()
 
 		ctf_modebase.update_wear.cancel_updates()
 
@@ -116,7 +105,6 @@ ctf_modebase.register_mode("classes", {
 
 		flag_huds.on_match_end()
 	end,
-	summary_func = summary.summary_func,
 	allocate_player = teams.allocate_player,
 	on_allocplayer = function(player, teamname)
 		classes.set(player)

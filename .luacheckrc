@@ -5,8 +5,6 @@ globals = {
 	"ctf_rankings", "ctf_playertag", "ctf_melee", "ctf_ranged", "ctf_combat_mode",
 	"ctf_kill_list", "ctf_healing", "ctf_cosmetics",
 
-	"mode_classic", "mode_classes", "mode_nade_fight",
-
 	"PlayerObj", "PlayerName", "HumanReadable", "RunCallbacks",
 
 	"chatcmdbuilder", "mhud", "rawf", "chatplus",

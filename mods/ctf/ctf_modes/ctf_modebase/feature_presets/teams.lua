@@ -1,4 +1,4 @@
-return function(rankings, summary, flag_huds)
+return function(rankings, flag_huds)
 
 local FLAG_MESSAGE_COLOR = "#d9b72a"
 local FLAG_CAPTURE_TIMER = 60 * 3
@@ -220,12 +220,13 @@ return {
 		teams_left = teams_left - #teamnames
 
 		if teams_left <= 1 then
-			summary.set_winner(string.format("Player %s captured the last flag", minetest.colorize(tcolor, player)))
+			ctf_modebase.summary.set_winner(string.format("Player %s captured the last flag", minetest.colorize(tcolor, player)))
+
+			local match_rankings, special_rankings, rank_values, formdef = ctf_modebase.summary.get()
+			formdef.title = HumanReadable(pteam) .." Team Wins!"
 
 			for _, pname in pairs(minetest.get_connected_players()) do
-				local match_rankings, special_rankings, rank_values, formdef = summary.summary_func()
-				formdef.title = HumanReadable(pteam) .." Team Wins!"
-				ctf_modebase.show_summary_gui(pname:get_player_name(), match_rankings, special_rankings, rank_values, formdef)
+				ctf_modebase.summary.show_gui(pname:get_player_name(), match_rankings, special_rankings, rank_values, formdef)
 			end
 
 			match_over = true

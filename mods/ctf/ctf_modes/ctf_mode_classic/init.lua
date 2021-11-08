@@ -1,19 +1,8 @@
-mode_classic = {
-	SUMMARY_RANKS = {
-		_sort = "score",
-		"score",
-		"flag_captures", "flag_attempts",
-		"kills", "kill_assists", "bounty_kills",
-		"deaths",
-		"hp_healed"
-	}
-}
-
-local rankings = ctf_modebase.feature_presets.rankings("classic", mode_classic)
-local summary = ctf_modebase.feature_presets.summary(mode_classic, rankings)
+local rankings = ctf_rankings.init()
+local recent_rankings = ctf_modebase.feature_presets.recent_rankings(rankings)
 local flag_huds = ctf_modebase.feature_presets.flag_huds
-local bounties = ctf_modebase.feature_presets.bounties(rankings)
-local teams = ctf_modebase.feature_presets.teams(rankings, summary, flag_huds)
+local bounties = ctf_modebase.feature_presets.bounties(recent_rankings)
+local teams = ctf_modebase.feature_presets.teams(recent_rankings, flag_huds)
 
 local crafts = ctf_core.include_files(
 	"crafts.lua"
@@ -52,6 +41,16 @@ ctf_modebase.register_mode("classic", {
 	},
 	crafts = crafts,
 	physics = {sneak_glitch = true, new_move = false},
+	rankings = rankings,
+	recent_rankings = recent_rankings,
+	summary_ranks = {
+		_sort = "score",
+		"score",
+		"flag_captures", "flag_attempts",
+		"kills", "kill_assists", "bounty_kills",
+		"deaths",
+		"hp_healed"
+	},
 
 	on_mode_start = function()
 		ctf_modebase.bounties.bounty_reward_func = bounties.bounty_reward_func
@@ -65,7 +64,7 @@ ctf_modebase.register_mode("classic", {
 		teams.on_new_match()
 
 		ctf_modebase.build_timer.start(mapdef, nil, function()
-			summary.on_match_start()
+			ctf_modebase.summary.on_match_start()
 			ctf_modebase.bounties.on_match_start()
 		end)
 
@@ -78,14 +77,13 @@ ctf_modebase.register_mode("classic", {
 	on_match_end = function()
 		teams.on_match_end()
 
-		summary.on_match_end()
-		rankings.on_match_end()
+		ctf_modebase.summary.on_match_end()
+		recent_rankings.on_match_end()
 
 		ctf_modebase.bounties.on_match_end()
 
 		flag_huds.on_match_end()
 	end,
-	summary_func = summary.summary_func,
 	allocate_player = teams.allocate_player,
 	on_allocplayer = function(player, teamname)
 		local tcolor = ctf_teams.team[teamname].color

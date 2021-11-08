@@ -1,19 +1,8 @@
-mode_nade_fight = {
-	SUMMARY_RANKS = {
-		_sort = "score",
-		"score",
-		"flag_captures", "flag_attempts",
-		"kills", "kill_assists", "bounty_kills",
-		"deaths",
-		"hp_healed"
-	}
-}
-
-local rankings = ctf_modebase.feature_presets.rankings("nade_fight", mode_nade_fight)
-local summary = ctf_modebase.feature_presets.summary(mode_nade_fight, rankings)
+local rankings = ctf_rankings.init()
+local recent_rankings = ctf_modebase.feature_presets.recent_rankings(rankings)
 local flag_huds = ctf_modebase.feature_presets.flag_huds
-local bounties = ctf_modebase.feature_presets.bounties(rankings)
-local teams = ctf_modebase.feature_presets.teams(rankings, summary, flag_huds)
+local bounties = ctf_modebase.feature_presets.bounties(recent_rankings)
+local teams = ctf_modebase.feature_presets.teams(recent_rankings, flag_huds)
 
 ctf_core.include_files("tool.lua")
 
@@ -45,6 +34,16 @@ ctf_modebase.register_mode("nade_fight", {
 	},
 	crafts = {},
 	physics = {sneak_glitch = true, new_move = false},
+	rankings = rankings,
+	recent_rankings = recent_rankings,
+	summary_ranks = {
+		_sort = "score",
+		"score",
+		"flag_captures", "flag_attempts",
+		"kills", "kill_assists", "bounty_kills",
+		"deaths",
+		"hp_healed"
+	},
 
 	is_bound_item = function(_, itemstack)
 		if itemstack:get_name() == "ctf_mode_nade_fight:grenade" then
@@ -63,7 +62,7 @@ ctf_modebase.register_mode("nade_fight", {
 		teams.on_new_match()
 
 		ctf_modebase.build_timer.start(mapdef, 60, function()
-			summary.on_match_start()
+			ctf_modebase.summary.on_match_start()
 			ctf_modebase.bounties.on_match_start()
 		end)
 
@@ -76,8 +75,8 @@ ctf_modebase.register_mode("nade_fight", {
 	on_match_end = function()
 		teams.on_match_end()
 
-		summary.on_match_end()
-		rankings.on_match_end()
+		ctf_modebase.summary.on_match_end()
+		recent_rankings.on_match_end()
 
 		ctf_modebase.update_wear.cancel_updates()
 
@@ -85,7 +84,6 @@ ctf_modebase.register_mode("nade_fight", {
 
 		flag_huds.on_match_end()
 	end,
-	summary_func = summary.summary_func,
 	allocate_player = teams.allocate_player,
 	on_allocplayer = function(player, teamname)
 		local tcolor = ctf_teams.team[teamname].color
