@@ -239,6 +239,7 @@ function ctf_map.save_map(mapmeta)
 	meta:set("chests"       , minetest.serialize(mapmeta.chests))
 	meta:set("teams"        , minetest.serialize(mapmeta.teams))
 	meta:set("barrier_area" , minetest.serialize(mapmeta.barrier_area))
+	meta:set("game_modes"   , minetest.serialize(mapmeta.game_modes))
 
 	meta:write()
 
