@@ -1,6 +1,6 @@
 return function(rankings)
 
-local rankings_recent = {}
+local rankings_players = {}
 local rankings_teams = {}
 
 local function add_recent(storage, key, amounts)
@@ -38,10 +38,10 @@ return {
 			hud_text = string.format("%s+%d %s | ", hud_text, val, HumanReadable(name))
 		end
 
-		add_recent(rankings_recent, player, amounts)
+		add_recent(rankings_players, player, amounts)
 
-		if rankings_recent[player]._team then
-			add_recent(rankings_teams, rankings_recent[player]._team, amounts)
+		if rankings_players[player]._team then
+			add_recent(rankings_teams, rankings_players[player]._team, amounts)
 		end
 
 		if not no_hud then
@@ -54,30 +54,30 @@ return {
 		player = PlayerName(player)
 		local tcolor = ctf_teams.team[team].color
 
-		if not rankings_recent[player] then
-			rankings_recent[player] = {}
+		if not rankings_players[player] then
+			rankings_players[player] = {}
 		end
 
 		if not rankings_teams[team] then
 			rankings_teams[team] = {}
 		end
 
-		rankings_recent[player]._row_color = tcolor
-		rankings_recent[player]._team = team
+		rankings_players[player]._row_color = tcolor
+		rankings_players[player]._team = team
 	end,
 	on_leaveplayer = function(player)
 		player = PlayerName(player)
-		if rankings_recent[player] and rankings_recent[player]._team then
-			clear_recent(rankings_teams, rankings_recent[player]._team)
+		if rankings_players[player] and rankings_players[player]._team then
+			clear_recent(rankings_teams, rankings_players[player]._team)
 		end
-		clear_recent(rankings_recent, player)
+		clear_recent(rankings_players, player)
 	end,
 	on_match_end = function()
-		rankings_recent = {}
+		rankings_players = {}
 		rankings_teams = {}
 	end,
-	recent = function() return rankings_recent end,
-	teams  = function() return rankings_teams  end,
+	players = function() return rankings_players end,
+	teams   = function() return rankings_teams   end,
 }
 
 end

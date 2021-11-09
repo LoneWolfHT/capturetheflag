@@ -2,7 +2,7 @@ local rankings = ctf_rankings.init()
 local recent_rankings = ctf_modebase.feature_presets.recent_rankings(rankings)
 local flag_huds = ctf_modebase.feature_presets.flag_huds
 local bounties = ctf_modebase.feature_presets.bounties(recent_rankings)
-local teams = ctf_modebase.feature_presets.teams(recent_rankings, flag_huds)
+local teams = ctf_modebase.feature_presets.teams(rankings, recent_rankings, flag_huds)
 
 local crafts = ctf_core.include_files(
 	"crafts.lua"

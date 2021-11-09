@@ -93,13 +93,17 @@ minetest.register_chatcommand("makepro", {
 			return false, mode_data
 		end
 
+		if not pname then
+			return false, "You should provide the player name"
+		end
+
 		mode_data.rankings:set(pname, {score = 10000, kills = 15, deaths = 10, flag_captures = 10})
 
 		return true, "Player " .. pname .. " is now a pro!"
 	end
 })
 
-minetest.register_chatcommand("add_score", {
+minetest.register_chatcommand("addscore", {
 	description = "Add score to player",
 	params = "<mode:technical modename> [playername] [score]",
 	privs = {ctf_admin = true},

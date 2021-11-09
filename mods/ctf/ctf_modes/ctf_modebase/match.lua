@@ -242,6 +242,7 @@ function ctf_modebase.place_map(mode, mapidx, callback)
 		mapidx = new_pool[math.random(1, #new_pool)]
 	end
 
+	table.insert(maps_placed, mapidx)
 	ctf_modebase.map_catalog.current_map = mapidx
 	local map = ctf_modebase.map_catalog.maps[mapidx]
 	ctf_map.place_map(map, function()

@@ -1,4 +1,4 @@
-return function(rankings, flag_huds)
+return function(rankings, recent_rankings, flag_huds)
 
 local FLAG_MESSAGE_COLOR = "#d9b72a"
 local FLAG_CAPTURE_TIMER = 60 * 3
@@ -9,7 +9,7 @@ local teams_left
 
 local function calculate_killscore(player)
 	local pname = PlayerName(player)
-	local match_rank = rankings.recent()[pname] or {}
+	local match_rank = recent_rankings.players()[pname] or {}
 	local kd = (match_rank.kills or 1) / (match_rank.deaths or 1)
 
 	return math.round(kd * 5)
@@ -83,12 +83,12 @@ local function end_combat_mode(player, killer)
 				ctf_modebase.bounties.remove(player)
 			end
 
-			rankings.add(killer, rewards)
+			recent_rankings.add(killer, rewards)
 
 			-- share kill score with healers
 			ctf_combat_mode.manage_extra(killer, function(pname, type)
 				if type == "healer" then
-					rankings.add(pname, {score = rewards.score})
+					recent_rankings.add(pname, {score = rewards.score})
 				end
 
 				return type
@@ -96,7 +96,7 @@ local function end_combat_mode(player, killer)
 		else
 			-- Only take score for suicide if they're in combat for being healed
 			if victim_combat_mode and #attackers >= 1 then
-				rankings.add(player, {score = -math.ceil(killscore/2)})
+				recent_rankings.add(player, {score = -math.ceil(killscore/2)})
 			end
 
 			ctf_kill_list.add_kill("", "ctf_modebase_skull.png", player) -- suicide
@@ -104,7 +104,7 @@ local function end_combat_mode(player, killer)
 
 		for _, pname in pairs(attackers) do
 			if not killer or pname ~= killer:get_player_name() then
-				rankings.add(pname, {kill_assists = 1, score = math.ceil(killscore / #attackers)})
+				recent_rankings.add(pname, {kill_assists = 1, score = math.ceil(killscore / #attackers)})
 			end
 		end
 	end
@@ -131,7 +131,7 @@ return {
 	allocate_player = function(player)
 		player = PlayerName(player)
 
-		local teams = rankings.teams()
+		local teams = recent_rankings.teams()
 		local best_score = nil
 		local worst_score = nil
 
@@ -187,7 +187,7 @@ return {
 
 		celebrate_team(ctf_teams.get(player))
 
-		rankings.add(player, {score = 20, flag_attempts = 1})
+		recent_rankings.add(player, {score = 20, flag_attempts = 1})
 
 		flag_huds.track_capturer(player, FLAG_CAPTURE_TIMER)
 	end,
@@ -215,7 +215,7 @@ return {
 		)
 		flag_huds.untrack_capturer(player)
 
-		rankings.add(player, {score = 30 * #teamnames, flag_captures = #teamnames})
+		recent_rankings.add(player, {score = 30 * #teamnames, flag_captures = #teamnames})
 
 		teams_left = teams_left - #teamnames
 
@@ -252,7 +252,7 @@ return {
 		player:hud_set_hotbar_image("gui_hotbar.png^[colorize:" .. tcolor .. ":128")
 		player:hud_set_hotbar_selected_image("gui_hotbar_selected.png^[multiply:" .. tcolor)
 
-		rankings.set_team(player, teamname)
+		recent_rankings.set_team(player, teamname)
 
 		ctf_playertag.set(player, ctf_playertag.TYPE_ENTITY)
 
@@ -269,11 +269,11 @@ return {
 	on_leaveplayer = function(player)
 		local pname = player:get_player_name()
 
-		rankings.on_leaveplayer(pname)
-
 		if end_combat_mode(player) then
-			rankings.add(player, {deaths = 1})
+			recent_rankings.add(player, {deaths = 1})
 		end
+
+		recent_rankings.on_leaveplayer(pname)
 	end,
 	on_dieplayer = function(player, reason)
 		if reason.type == "punch" and reason.object and reason.object:is_player() then
@@ -286,7 +286,7 @@ return {
 
 		if ctf_modebase.prep_delayed_respawn(player) then
 			if not ctf_modebase.build_timer.in_progress() then
-				rankings.add(player, {deaths = 1})
+				recent_rankings.add(player, {deaths = 1})
 			end
 		end
 	end,
@@ -306,11 +306,11 @@ return {
 		return tp_player_near_flag(player)
 	end,
 	get_chest_access = function(pname)
-		local rank = rankings.get(pname)
+		local rank = rankings:get(pname)
 		local deny_pro = "You need to have more than 1.5 kills per death, "..
 				"10 captures, and at least 10,000 score to access the pro section"
 
-		-- Remember to update /makepro in rankings.lua if you change anything here
+		-- Remember to update /makepro in ranking_commands.lua if you change anything here
 		if rank then
 			if (rank.score or 0) >= 10000 and (rank.kills or 0) / (rank.deaths or 0) >= 1.5 and rank.flag_captures >= 10 then
 				return true, true
@@ -361,7 +361,7 @@ return {
 			stats.score = math.ceil(amount/2)
 		end
 
-		rankings.add(player, stats, true)
+		recent_rankings.add(player, stats, true)
 	end,
 }
 

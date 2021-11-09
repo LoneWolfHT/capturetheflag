@@ -35,7 +35,7 @@ function ctf_modebase.summary.get(prev)
 		local rankings = current_mode.recent_rankings
 
 		return
-			rankings.recent(), team_rankings(rankings.teams()), current_mode.summary_ranks, {
+			rankings.players(), team_rankings(rankings.teams()), current_mode.summary_ranks, {
 				title = "Match Summary",
 				special_row_title = "Total Team Stats",
 				gamemode = ctf_modebase.current_mode,
@@ -62,7 +62,7 @@ function ctf_modebase.summary.on_match_end()
 	local rankings = current_mode.recent_rankings
 
 	previous = {
-		players = rankings.recent(),
+		players = rankings.players(),
 		teams = rankings.teams(),
 		gamemode = ctf_modebase.current_mode,
 		winner = winner or "NO WINNER",
