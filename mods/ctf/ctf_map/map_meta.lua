@@ -137,6 +137,7 @@ function ctf_map.load_map_meta(idx, dirname)
 			chests        = minetest.deserialize(meta:get("chests")),
 			teams         = minetest.deserialize(meta:get("teams")),
 			barrier_area  = minetest.deserialize(meta:get("barrier_area")),
+			game_modes    = minetest.deserialize(meta:get("game_modes")),
 		}
 
 		for id, def in pairs(map.chests) do

@@ -11,10 +11,36 @@ minetest.register_entity("ctf_modebase:respawn_movement_freezer", {
 	},
 })
 
+local function finish_respawn(pname, immunity_after)
+	local player = minetest.get_player_by_name(pname)
+	hud:remove(pname, "timer")
+
+	local hp_max = respawn_delay[pname].hp_max
+
+	player:set_properties({
+		hp_max = hp_max,
+		pointable = not immunity_after and true,
+	})
+	physics.remove(pname, "ctf_modebase:respawn_freeze")
+
+	player:set_hp(hp_max)
+
+	if immunity_after then
+		minetest.after(immunity_after, function()
+			if player then
+				player:set_properties({
+					pointable = true
+				})
+			end
+		end)
+	end
+
+	player:set_detach()
+	respawn_delay[pname].obj:remove()
+end
+
 local function run_respawn_timer(pname)
 	if not respawn_delay[pname] then return end
-
-	local player = minetest.get_player_by_name(pname)
 
 	respawn_delay[pname].timer = respawn_delay[pname].timer - 1
 
@@ -25,40 +51,16 @@ local function run_respawn_timer(pname)
 
 		minetest.after(1, run_respawn_timer, pname)
 	else
-		hud:remove(pname, "timer")
-
-		local hp_max = respawn_delay[pname].hp_max
-		local immunity_after = respawn_delay[pname].immunity_after
-
-		player:set_properties({
-			hp_max = hp_max,
-			pointable = not immunity_after and true,
-		})
-		physics.remove(pname, "ctf_modebase:respawn_freeze")
-
-		player:set_hp(hp_max)
-
-		if immunity_after then
-			minetest.after(immunity_after, function()
-				if player then
-					player:set_properties({
-						pointable = true
-					})
-				end
-			end)
-		end
-
-		player:set_detach()
-		respawn_delay[pname].obj:remove()
-
+		finish_respawn(pname, respawn_delay[pname].immunity_after)
 		respawn_delay[pname].state = "done"
-		RunCallbacks(minetest.registered_on_respawnplayers, player)
+		RunCallbacks(minetest.registered_on_respawnplayers, minetest.get_player_by_name(pname))
 	end
 end
 
+ctf_modebase.respawn_delay = {}
+
 -- Returns true unless player has already been prepped
-function ctf_modebase.prep_delayed_respawn(player)
-	player = PlayerObj(player)
+function ctf_modebase.respawn_delay.prepare(player)
 	local pname = player:get_player_name()
 
 	if not respawn_delay[pname] then
@@ -81,22 +83,19 @@ function ctf_modebase.prep_delayed_respawn(player)
 end
 
 -- Returns false if timer is up, true if timer is ongoing
-function ctf_modebase.delay_respawn(player, time, immunity_after)
-	player = PlayerObj(player)
+function ctf_modebase.respawn_delay.respawn(player, time, immunity_after)
 	local pname = player:get_player_name()
+	if not respawn_delay[pname] then return false end
 
 	assert(time >= 1, "Delay time must be >= 1!")
 
-	if respawn_delay[pname] then
-		if respawn_delay[pname].state == "done" then
-			respawn_delay[pname] = nil
+	if respawn_delay[pname].state == "done" then
+		respawn_delay[pname] = nil
+		return false
+	end
 
-			return false
-		elseif respawn_delay[pname].state == "in_progress" then
-			return true
-		end
-	else
-		ctf_modebase.prep_delayed_respawn(pname)
+	if respawn_delay[pname].state == "in_progress" then
+		return true
 	end
 
 	respawn_delay[pname].timer = time
@@ -114,6 +113,13 @@ function ctf_modebase.delay_respawn(player, time, immunity_after)
 	run_respawn_timer(pname)
 
 	return true
+end
+
+function ctf_modebase.respawn_delay.on_match_end()
+	for pname in pairs(respawn_delay) do
+		finish_respawn(pname, nil)
+	end
+	respawn_delay = {}
 end
 
 minetest.register_on_leaveplayer(function(player)
