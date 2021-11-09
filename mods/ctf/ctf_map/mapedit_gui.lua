@@ -13,14 +13,14 @@ function ctf_map.show_map_editor(player)
 	table.sort(dirlist_sorted)
 
 	ctf_gui.show_formspec(player, "ctf_map:start", {
-		size = {x = 8, y = 8},
+		size = {x = 8, y = 10},
 		title = "Capture The Flag Map Editor",
 		description = "Would you like to edit an existing map or create a new one?",
 		privs = {ctf_map_editor = true},
 		elements = {
 			newmap = {
 				type = "button", exit = true, label = "Create New Map",
-				pos = {"center", 0},
+				pos = {"center", 0.5},
 				func = function(pname)
 					minetest.chat_send_player(pname,
 							"Please decide what the size of your map will be and punch nodes on two opposite corners of it")
@@ -107,9 +107,9 @@ function ctf_map.show_map_editor(player)
 				end,
 			},
 			currentmaps = {
-				type = "dropdown",
+				type = "textlist",
 				pos = {"center", 1.9 + ctf_gui.ELEM_SIZE.y},
-				size = {5, ctf_gui.ELEM_SIZE.y},
+				size = {6, 6},
 				items = dirlist_sorted,
 			},
 		}
