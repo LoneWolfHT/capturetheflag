@@ -31,7 +31,7 @@ local function tp_player_near_flag(player)
 end
 
 local function celebrate_team(teamname)
-	for _, player in pairs(minetest.get_connected_players()) do
+	for _, player in ipairs(minetest.get_connected_players()) do
 		local pname = player:get_player_name()
 		local pteam = ctf_teams.player_team[pname].name
 
@@ -239,7 +239,7 @@ return {
 			local match_rankings, special_rankings, rank_values, formdef = ctf_modebase.summary.get()
 			formdef.title = HumanReadable(pteam) .." Team Wins!"
 
-			for _, pname in pairs(minetest.get_connected_players()) do
+			for _, pname in ipairs(minetest.get_connected_players()) do
 				ctf_modebase.summary.show_gui(pname:get_player_name(), match_rankings, special_rankings, rank_values, formdef)
 			end
 
