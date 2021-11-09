@@ -146,7 +146,7 @@ function ctf_modebase.summary.show_gui_sorted(name, rankings, special_rankings, 
 			local row = string.format("%d,%s,%s", ranks.number or i, color, ranks.pname)
 
 			for idx, rank in ipairs(rank_values) do
-				row = string.format("%s,%s", row, ranks[rank] or 0)
+				row = string.format("%s,%s", row, math.round(ranks[rank] or 0))
 			end
 
 			sorted[i] = row

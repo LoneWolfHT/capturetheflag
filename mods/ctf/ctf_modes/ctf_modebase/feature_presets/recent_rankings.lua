@@ -35,17 +35,17 @@ return {
 		player = PlayerName(player)
 
 		for name, val in pairs(amounts) do
-			hud_text = string.format("%s+%d %s | ", hud_text, val, HumanReadable(name))
+			hud_text = string.format("%s+%d %s | ", hud_text, math.round(val), HumanReadable(name))
+		end
+
+		if not no_hud then
+			hud_events.new(player, {text = hud_text:sub(1, -4)})
 		end
 
 		add_recent(rankings_players, player, amounts)
 
 		if rankings_players[player]._team then
 			add_recent(rankings_teams, rankings_players[player]._team, amounts)
-		end
-
-		if not no_hud then
-			hud_events.new(player, {text = hud_text:sub(1, -4)})
 		end
 
 		rankings:add(player, amounts)

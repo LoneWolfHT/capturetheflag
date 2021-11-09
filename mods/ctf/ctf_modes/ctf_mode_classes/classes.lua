@@ -1,3 +1,4 @@
+ctf_gui.init()
 local cooldowns = ctf_core.init_cooldowns()
 local CLASS_SWITCH_COOLDOWN = 30
 
@@ -40,7 +41,7 @@ local function dist_from_flag(player)
 
 	if not tname then return 0 end
 
-	return vector.distance(ctf_map.current_map.teams[tname].flag_pos, PlayerObj(player):get_pos())
+	return vector.distance(ctf_map.current_map.teams[tname].flag_pos, player:get_pos())
 end
 
 --
@@ -249,7 +250,6 @@ return {
 		end
 	end,
 	set = function(player, classname)
-		player = PlayerObj(player)
 		local meta = player:get_meta()
 		local pteam = ctf_teams.get(player)
 		local oldclassname = meta:get_string("class")
@@ -299,14 +299,27 @@ return {
 	get_name = function(player)
 		return player:get_meta():get_string("class") or false
 	end,
+	select_class = function(self, player, classname)
+		player = PlayerObj(player)
+		if not player then return end
+
+		if dist_from_flag(player) <= 5 then
+			cooldowns:set(player, CLASS_SWITCH_COOLDOWN)
+			self.set(player, classname)
+		end
+	end,
 	show_class_formspec = function(self, player, selected)
 		player = PlayerObj(player)
+		if not player then return end
 
 		if not selected then
-			selected = self.get_name(player)
-
-			selected = selected and table.indexof(class_list, selected) or 1
+			local name = self.get_name(player)
+			if name then
+				selected = table.indexof(class_list, name)
+			end
 		end
+
+		selected = selected or 1
 
 		if not cooldowns:get(player) then
 			if dist_from_flag(player) > 5 then
@@ -325,20 +338,18 @@ return {
 					local new_idx = table.indexof(readable_class_list, fields[field_name])
 
 					if new_idx ~= selected then
-						self.show_class_formspec(self, playername, new_idx)
+						self:show_class_formspec(playername, new_idx)
 					end
 				end,
 			}
+
 			elements.select_class = {
 				type = "button",
 				exit = true,
 				label = "Choose Class",
 				pos = {x = ctf_gui.ELEM_SIZE.x + 0.5, y = 0.5},
 				func = function(playername, fields, field_name)
-					if dist_from_flag(player) <= 5 then
-						cooldowns:set(player, CLASS_SWITCH_COOLDOWN)
-						self.set(player, class_list[selected])
-					end
+					self:select_class(playername, class_list[selected])
 				end,
 			}
 

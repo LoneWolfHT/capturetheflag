@@ -44,7 +44,7 @@ ctf_core.register_chatcommand_alias("rank", "r", {
 			return_str = string.format("%s%s: %s,\n\t",
 				return_str,
 				minetest.colorize("#63d437", HumanReadable(rank)),
-				minetest.colorize("#ffea00", prank[rank] or 0)
+				minetest.colorize("#ffea00", math.round(prank[rank] or 0))
 			)
 		end
 
@@ -132,7 +132,7 @@ minetest.register_chatcommand("addscore", {
 		local old_score = old_ranks.score or 0
 		mode_data.rankings:set(pname, {score = old_score + score})
 
-		return true, string.format("Added %d score to player %s", score, pname)
+		return true, string.format("Added %s score to player %s", score, pname)
 	end
 })
 
