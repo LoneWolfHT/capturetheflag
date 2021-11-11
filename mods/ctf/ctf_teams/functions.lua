@@ -3,80 +3,49 @@
 --
 
 ---@param player string | ObjectRef
+function ctf_teams.remove_online_player(player)
+	player = PlayerName(player)
+
+	local team = ctf_teams.player_team[player]
+	if team then
+		if ctf_teams.online_players[team].players[player] then
+			ctf_teams.online_players[team].players[player] = nil
+			ctf_teams.online_players[team].count = ctf_teams.online_players[team].count - 1
+		end
+	end
+end
+
+---@param player string | ObjectRef
 ---@param teamname string | nil
 function ctf_teams.set(player, teamname)
 	player = PlayerName(player)
 
 	if not teamname then
-		ctf_teams.remembered_player[player] = nil
 		ctf_teams.player_team[player] = nil
 		return
 	end
 
 	assert(type(teamname) == "string")
-	if not (ctf_teams.player_team[player] and ctf_teams.player_team[player].locked) then
-		ctf_teams.player_team[player] = {
-			name = teamname,
-		}
 
-		ctf_teams.remembered_player[player] = teamname
-
-		RunCallbacks(ctf_teams.registered_on_allocplayer, PlayerObj(player), teamname)
-
-		return true
+	if ctf_teams.player_team[player] == teamname then
+		return
 	end
+
+	ctf_teams.remove_online_player(player)
+
+	ctf_teams.player_team[player] = teamname
+	ctf_teams.online_players[teamname].players[player] = true
+	ctf_teams.online_players[teamname].count = ctf_teams.online_players[teamname].count + 1
+
+	RunCallbacks(ctf_teams.registered_on_allocplayer, PlayerObj(player), teamname)
 end
 
 ---@param player string | ObjectRef
----@return boolean | string
+---@return nil | string
 function ctf_teams.get(player)
 	player = PlayerName(player)
 
-	if ctf_teams.player_team[player] then
-		return ctf_teams.player_team[player].name
-	end
-
-	return false
-end
-
-
----@param teamname string
----@return table
---- Returns a list of all players in the team 'teamname'
-function ctf_teams.get_team(teamname)
-	local out = {}
-
-	for _, player in ipairs(minetest.get_connected_players()) do
-		local pname = player:get_player_name()
-		local team = ctf_teams.get(pname)
-
-		if team and team == teamname then
-			table.insert(out, pname)
-		end
-	end
-
-	return out
-end
-
----@return table
---- Returns a table where a key is team name and a value is a list of all players in the team
-function ctf_teams.get_teams()
-	local out = {}
-
-	for _, player in ipairs(minetest.get_connected_players()) do
-		local pname = player:get_player_name()
-		local team = ctf_teams.get(pname)
-
-		if team then
-			if not out[team] then
-				out[team] = {}
-			end
-
-			table.insert(out[team], pname)
-		end
-	end
-
-	return out
+	return ctf_teams.player_team[player]
 end
 
 --
@@ -105,14 +74,13 @@ ctf_teams.allocate_player = ctf_teams.default_allocate_player
 ---@param teams table
 -- Should be called at match start
 function ctf_teams.allocate_teams(teams)
-	ctf_teams.current_teams = {}
+	ctf_teams.online_players = {}
 	ctf_teams.current_team_list = {}
 	ctf_teams.player_team = {}
-	ctf_teams.remembered_player = {}
 	tpos = 1
 
 	for teamname, def in pairs(teams) do
-		ctf_teams.current_teams[teamname] = true
+		ctf_teams.online_players[teamname] = {count = 0, players = {}}
 		table.insert(ctf_teams.current_team_list, teamname)
 	end
 
@@ -144,9 +112,8 @@ end
 --- Like `minetest.chat_send_player()` but sends to all members of the given team
 function ctf_teams.chat_send_team(teamname, message)
 	assert(teamname and message, "Incorrect usage of chat_send_team()")
-	local members = ctf_teams.get_team(teamname)
 
-	for _, player in pairs(members) do
+	for player in pairs(ctf_teams.online_players[teamname].players) do
 		minetest.chat_send_player(player, message)
 	end
 end

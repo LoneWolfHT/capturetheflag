@@ -137,18 +137,18 @@ return {
 	allocate_player = function(player)
 		player = PlayerName(player)
 
-		local team_players = ctf_teams.get_teams()
 		local team_scores = recent_rankings.teams()
 
 		local best_score = nil
 		local worst_score = nil
 		local best_players = nil
 		local worst_players = nil
+
 		local sum_score = 0
 
 		for _, team in ipairs(team_list) do
 			local score = (team_scores[team] and team_scores[team].score) or 0
-			local players_count = (team_players[team] and #team_players[team]) or 0
+			local players_count = ctf_teams.online_players[team].count
 
 			sum_score = sum_score + score
 
@@ -169,12 +169,12 @@ return {
 			end
 		end
 
-		local score_diff = (sum_score > 0 and (best_score.s - worst_score.s) / sum_score) or 0
+		local score_diff = (sum_score >= 100 and (best_score.s - worst_score.s) / sum_score) or 0
 		local players_diff = best_players.s - worst_players.s
 
 		-- Allocate player to remembered team unless they're desperately needed in the other
-		local remembered_team = ctf_teams.remembered_player[player]
-		if score_diff <= 0.4 and players_diff < 2 and remembered_team and not ctf_modebase.flag_captured[remembered_team] then
+		local remembered_team = ctf_teams.get(player)
+		if remembered_team and not ctf_modebase.flag_captured[remembered_team] and score_diff <= 0.4 and players_diff < 2 then
 			ctf_teams.set(player, remembered_team)
 		elseif players_diff == 0 or score_diff > 0.2 and players_diff < 2 then
 			ctf_teams.set(player, worst_score.t)
@@ -248,9 +248,8 @@ return {
 		else
 			for _, lost_team in ipairs(teamnames) do
 				table.remove(team_list, table.indexof(team_list, lost_team))
-				lost_team = ctf_teams.get_team(lost_team)
 
-				for _, lost_player in ipairs(lost_team) do
+				for lost_player in pairs(ctf_teams.online_players[lost_team].players) do
 					ctf_teams.allocate_player(lost_player)
 				end
 			end

@@ -7,20 +7,6 @@ for _, team in pairs(ctf_teams.teamlist) do
 	markers[team] = {timer = nil, hud = mhud.init()}
 end
 
-minetest.register_globalstep(function(dtime)
-	for team, vals in pairs(markers) do
-		if vals.timer then
-			vals.timer = vals.timer + dtime
-
-			if vals.timer >= MARKER_LIFETIME then
-				ctf_modebase.remove_marker(team)
-			else
-				markers[team].timer = vals.timer
-			end
-		end
-	end
-end)
-
 local function add_marker(player, message, pos)
 	local pteam = ctf_teams.get(player)
 
@@ -43,16 +29,16 @@ local function add_marker(player, message, pos)
 end
 
 function ctf_modebase.remove_marker(team)
-	markers[team].hud:clear_all()
 	markers[team].timer = nil
+	markers[team].hud:clear_all()
 	markers[team].content = nil
 end
 
 function ctf_modebase.add_marker(team, message, pos)
 	markers[team].content = {msg = message, pos = pos}
-	markers[team].timer = 0
+	markers[team].timer = minetest.after(MARKER_LIFETIME, ctf_modebase.remove_marker, team)
 
-	for _, player in pairs(ctf_teams.get_team(team)) do
+	for player in pairs(ctf_teams.online_players[team].players) do
 		add_marker(player, message, pos)
 	end
 end

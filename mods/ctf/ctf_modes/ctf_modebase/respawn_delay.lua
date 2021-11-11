@@ -55,7 +55,7 @@ function ctf_modebase.respawn_delay.prepare(player)
 
 		player:set_properties({hp_max = 0, pointable = false})
 
-		physics.set(pname, "ctf_modebase:respawn_freeze", {speed = 0, jump = 0, gravity = 0})
+		physics.set(pname, "ctf_modebase:respawn_freeze", {speed = 0, jump = 0, gravity = 1})
 
 		return true
 	end

@@ -102,6 +102,8 @@ minetest.register_chatcommand("ctf_start", {
 	description = "Skip build time",
 	privs = {ctf_admin = true},
 	func = function(name, param)
+		minetest.log("action", name .. " ran /ctf_start")
+
 		ctf_modebase.build_timer.finish()
 
 		return true, "Build time ended"

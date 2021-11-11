@@ -6,7 +6,6 @@ ctf_modebase.bounties = {
 	new = function(pname, pteam, rewards)
 		pname = PlayerName(pname)
 		local reward_str = ""
-		local current_teams = ctf_map.current_map.teams
 
 		for reward, amount in pairs(rewards) do
 			reward_str = string.format("%s%s%d %s, ", reward_str, amount >= 0 and "+" or "-", amount, HumanReadable(reward))
@@ -17,7 +16,7 @@ ctf_modebase.bounties = {
 			pname, reward_str:sub(1, -3)
 		))
 
-		for team in pairs(current_teams) do -- show bounty to all but target's team
+		for _, team in ipairs(ctf_teams.current_team_list) do -- show bounty to all but target's team
 			if team ~= pteam then
 				ctf_teams.chat_send_team(team, bounty_message)
 			end
@@ -67,7 +66,15 @@ ctf_modebase.bounties = {
 		end)
 	end,
 	reassign = function()
-		local teams = ctf_teams.get_teams()
+		local teams = {}
+
+		for tname, team in pairs(ctf_teams.online_players) do
+			teams[tname] = {}
+			for player in pairs(team.players) do
+				table.insert(teams[tname], player)
+			end
+		end
+
 		for tname in pairs(bounties) do
 			if not teams[tname] then
 				teams[tname] = {}

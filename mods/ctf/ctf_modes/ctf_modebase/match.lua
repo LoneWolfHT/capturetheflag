@@ -4,8 +4,12 @@ local voter_count = 0
 local timer = 0
 
 local map_pools = {}
-local new_specific_map = nil
-local function start_new_match(new_mode)
+
+local restart_on_next_match = false
+local map_on_next_match = nil
+local mode_on_next_match = nil
+
+local function start_new_mode(new_mode)
 	for _, pos in pairs(ctf_teams.team_chests) do
 		minetest.remove_node(pos)
 	end
@@ -22,7 +26,7 @@ local function start_new_match(new_mode)
 		RunCallbacks(ctf_modebase.registered_on_new_mode, new_mode, old_mode)
 	end
 
-	ctf_modebase.place_map(new_mode, new_specific_map, function(map)
+	ctf_modebase.place_map(new_mode, map_on_next_match, function(map)
 		give_initial_stuff.reset_stuff_providers()
 
 		RunCallbacks(ctf_modebase.registered_on_new_match, map, old_map)
@@ -37,6 +41,9 @@ local function start_new_match(new_mode)
 
 		ctf_modebase.current_mode_matches = ctf_modebase.current_mode_matches + 1
 	end)
+
+	map_on_next_match = nil
+	mode_on_next_match = nil
 end
 
 local function vote_finish()
@@ -67,7 +74,7 @@ local function vote_finish()
 		votes._most.c or 0
 	))
 
-	start_new_match(new_mode)
+	start_new_mode(new_mode)
 end
 
 minetest.register_on_joinplayer(function(player)
@@ -107,7 +114,7 @@ minetest.register_on_leaveplayer(function(player)
 	end
 end)
 
-function ctf_modebase.start_mode_vote()
+local function start_mode_vote()
 	voters = {}
 
 	for _, player in pairs(minetest.get_connected_players()) do
@@ -125,24 +132,33 @@ function ctf_modebase.start_mode_vote()
 	voter_count = 0
 end
 
-function ctf_modebase.start_new_match(new_mode, new_map)
-	new_specific_map = new_map
+function ctf_modebase.start_new_match()
+	local path = minetest.get_worldpath() .. "/queue_restart.txt"
+	if ctf_core.file_exists(path) then
+		assert(os.remove(path))
+		restart_on_next_match = true
+	end
+
+	if restart_on_next_match then
+		minetest.request_shutdown("Restarting server at imperator request.", true)
+		return
+	end
 
 	if ctf_modebase.current_mode then
 		ctf_modebase:get_current_mode().on_match_end()
 	end
 
-	if new_mode then
+	if mode_on_next_match then
 		ctf_modebase.current_mode_matches = 0
 
-		start_new_match(new_mode)
+		start_new_mode(mode_on_next_match)
 	-- Show mode selection form every 'ctf_modebase.MAPS_PER_MODE'-th match
 	elseif ctf_modebase.current_mode_matches >= ctf_modebase.MAPS_PER_MODE or not ctf_modebase.current_mode then
 		ctf_modebase.current_mode_matches = 0
 
-		ctf_modebase.start_mode_vote()
+		start_mode_vote()
 	else
-		start_new_match(ctf_modebase.current_mode)
+		start_new_mode(ctf_modebase.current_mode)
 	end
 end
 
@@ -269,27 +285,73 @@ function ctf_modebase.place_map(mode, mapidx, callback)
 	end)
 end
 
+local function set_next(param)
+	local map = nil
+	local map_name, mode = ctf_modebase.match_mode(param)
+
+	if mode then
+		if not ctf_modebase.modes[mode] then
+			return "No such game mode: " .. mode
+		end
+	end
+
+	if map_name then
+		map = ctf_modebase.map_catalog.map_dirnames[map_name]
+		if not map then
+			return "No such map: " .. map_name
+		end
+	end
+
+	mode_on_next_match = mode
+	map_on_next_match = map
+end
+
 minetest.register_chatcommand("ctf_next", {
-	description = "Skip to a new match.",
+	description = "Set a new map and mode after the match ends",
 	privs = {ctf_admin = true},
 	params = "<mode:technical modename> <technical mapname>",
 	func = function(name, param)
-		local map = nil
-		local map_name, mode = ctf_modebase.match_mode(param)
+		minetest.log("action", name .. " ran /ctf_next " .. param)
 
-		if mode then
-			if not ctf_modebase.modes[mode] then
-				return false, "No such game mode: " .. mode
-			end
+		local error = set_next(param)
+		if error then
+			return false, error
 		end
-
-		if map_name then
-			map = ctf_modebase.map_catalog.map_dirnames[map_name]
-			if not map then
-				return false, "No such map: " .. map_name
-			end
-		end
-
-		ctf_modebase.start_new_match(mode, map)
 	end,
+})
+
+minetest.register_chatcommand("ctf_skip", {
+	description = "Skip to a new match now",
+	privs = {ctf_admin = true},
+	params = "<mode:technical modename> <technical mapname>",
+	func = function(name, param)
+		minetest.log("action", name .. " ran /ctf_next_now " .. param)
+
+		local error = set_next(param)
+		if error then
+			return false, error
+		end
+
+		ctf_modebase.start_new_match()
+	end,
+})
+
+minetest.register_chatcommand("queue_restart", {
+		description = "Queue server restart",
+		privs = {server = true},
+		func = function(name)
+				restart_on_next_match = true
+				minetest.log("action", name .. " queued a restart")
+				return true, "Restart queued."
+		end
+})
+
+minetest.register_chatcommand("unqueue_restart", {
+		description = "Unqueue server restart",
+		privs = {server = true},
+		func = function(name)
+				restart_on_next_match = false
+				minetest.log("action", name .. " un-queued a restart")
+				return true, "Restart cancelled."
+		end
 })
