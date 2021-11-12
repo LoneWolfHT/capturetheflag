@@ -173,7 +173,7 @@ return {
 		local players_diff = best_players.s - worst_players.s
 
 		-- Allocate player to remembered team unless they're desperately needed in the other
-		local remembered_team = ctf_teams.get(player)
+		local remembered_team = ctf_teams.remembered_player[player]
 		if remembered_team and not ctf_modebase.flag_captured[remembered_team] and score_diff <= 0.4 and players_diff < 2 then
 			ctf_teams.set(player, remembered_team)
 		elseif players_diff == 0 or score_diff > 0.2 and players_diff < 2 then

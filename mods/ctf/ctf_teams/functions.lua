@@ -13,6 +13,7 @@ function ctf_teams.remove_online_player(player)
 			ctf_teams.online_players[team].count = ctf_teams.online_players[team].count - 1
 		end
 	end
+	ctf_teams.player_team[player] = nil
 end
 
 ---@param player string | ObjectRef
@@ -22,6 +23,7 @@ function ctf_teams.set(player, teamname)
 
 	if not teamname then
 		ctf_teams.player_team[player] = nil
+		ctf_teams.remembered_player[player] = nil
 		return
 	end
 
@@ -34,6 +36,7 @@ function ctf_teams.set(player, teamname)
 	ctf_teams.remove_online_player(player)
 
 	ctf_teams.player_team[player] = teamname
+	ctf_teams.remembered_player[player] = teamname
 	ctf_teams.online_players[teamname].players[player] = true
 	ctf_teams.online_players[teamname].count = ctf_teams.online_players[teamname].count + 1
 
@@ -77,6 +80,7 @@ function ctf_teams.allocate_teams(teams)
 	ctf_teams.player_team = {}
 	ctf_teams.online_players = {}
 	ctf_teams.current_team_list = {}
+	ctf_teams.remembered_player = {}
 	tpos = 1
 
 	for teamname, def in pairs(teams) do
