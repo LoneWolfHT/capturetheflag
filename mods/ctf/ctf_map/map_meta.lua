@@ -1,5 +1,11 @@
 local CURRENT_MAP_VERSION = "2"
 
+function ctf_map.skybox_exists(subdir)
+	local list = minetest.get_dir_list(subdir, true)
+
+	return not (table.indexof(list, "skybox") == -1)
+end
+
 function ctf_map.load_map_meta(idx, dirname)
 	local meta = Settings(ctf_map.maps_dir .. dirname .. "/map.conf")
 
@@ -13,10 +19,6 @@ function ctf_map.load_map_meta(idx, dirname)
 	if not meta:get("map_version") then
 		if not meta:get("r") then
 			error("Map was not properly configured: " .. ctf_map.maps_dir .. dirname .. "/map.conf")
-		end
-
-		if meta:get("rotation") and meta:get("rotation") == "x" then
-			minetest.chat_send_all(minetest.colorize("red", "Map must be rotated 90 degress along the y axis"))
 		end
 
 		local mapr = meta:get("r")
@@ -36,6 +38,7 @@ function ctf_map.load_map_meta(idx, dirname)
 		map = {
 			pos1          = pos1,
 			pos2          = pos2,
+			rotation      = meta:get("rotation"),
 			offset        = offset,
 			size          = vector.subtract(pos2, pos1),
 			enabled       = not meta:get("disabled", false),
@@ -134,6 +137,7 @@ function ctf_map.load_map_meta(idx, dirname)
 			chests        = minetest.deserialize(meta:get("chests")),
 			teams         = minetest.deserialize(meta:get("teams")),
 			barrier_area  = minetest.deserialize(meta:get("barrier_area")),
+			game_modes    = minetest.deserialize(meta:get("game_modes")),
 		}
 
 		for id, def in pairs(map.chests) do
@@ -154,6 +158,13 @@ function ctf_map.load_map_meta(idx, dirname)
 		else
 			map.barrier_area = {pos1 = map.pos1, pos2 = map.pos2}
 		end
+	end
+
+	if ctf_map.skybox_exists(ctf_map.maps_dir .. dirname) then
+		skybox.add({dirname, "#ffffff", [5] = "png"})
+
+		map.skybox = dirname
+		map.skybox_forced = true
 	end
 
 	return map
@@ -186,8 +197,18 @@ function ctf_map.save_map(mapmeta)
 		if not def.enabled then
 			mapmeta.teams[id] = nil
 		else
+			local flagpos = minetest.find_node_near(def.flag_pos, 3, {"group:flag_bottom"}, true)
+
+			if not flagpos then
+				flagpos = def.flag_pos
+				minetest.chat_send_all(minetest.colorize("red",
+					"Failed to find flag for team " .. id ..
+					". Node at given position: " .. dump(minetest.get_node(flagpos).name)
+				))
+			end
+
 			mapmeta.teams[id].flag_pos = vector.subtract(
-				assert(minetest.find_node_near(def.flag_pos, 3, {"group:flag_bottom"}, true), "Failed to find flag for team "..id),
+				flagpos,
 				mapmeta.offset
 			)
 
@@ -218,6 +239,7 @@ function ctf_map.save_map(mapmeta)
 	meta:set("chests"       , minetest.serialize(mapmeta.chests))
 	meta:set("teams"        , minetest.serialize(mapmeta.teams))
 	meta:set("barrier_area" , minetest.serialize(mapmeta.barrier_area))
+	meta:set("game_modes"   , minetest.serialize(mapmeta.game_modes))
 
 	meta:write()
 

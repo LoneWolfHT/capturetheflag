@@ -1,23 +1,52 @@
 local voting = false
 local voters = {}
+local voter_count = 0
 local timer = 0
 
--- List of all maps placed during the current mode
-local maps_placed = {}
+local map_pools = {}
 
-local check_interval = 0
-minetest.register_globalstep(function(dtime)
-	if not voting then return end
+local restart_on_next_match = false
+local map_on_next_match = nil
+local mode_on_next_match = nil
 
-	check_interval = check_interval + dtime
+local function start_new_mode(new_mode)
+	for _, pos in pairs(ctf_teams.team_chests) do
+		minetest.remove_node(pos)
+	end
+	ctf_teams.team_chests = {}
 
-	if check_interval >= 3 then
-		timer = timer - check_interval
-		check_interval = 0
-	else
-		return
+	local old_map = ctf_map.current_map
+	local old_mode = ctf_modebase.current_mode
+
+	if new_mode ~= old_mode then
+		if old_mode and ctf_modebase.modes[old_mode].on_mode_end then
+			ctf_modebase.modes[old_mode].on_mode_end()
+		end
+		ctf_modebase.current_mode = new_mode
+		RunCallbacks(ctf_modebase.registered_on_new_mode, new_mode, old_mode)
 	end
 
+	ctf_modebase.place_map(new_mode, map_on_next_match, function(map)
+		give_initial_stuff.reset_stuff_providers()
+
+		RunCallbacks(ctf_modebase.registered_on_new_match, map, old_map)
+
+		if map.initial_stuff then
+			give_initial_stuff.register_stuff_provider(function()
+				return map.initial_stuff
+			end)
+		end
+
+		ctf_teams.allocate_teams(map.teams)
+
+		ctf_modebase.current_mode_matches = ctf_modebase.current_mode_matches + 1
+	end)
+
+	map_on_next_match = nil
+	mode_on_next_match = nil
+end
+
+local function vote_finish()
 	local votes = {_most = {c = 0}}
 
 	for _, mode in pairs(ctf_modebase.modelist) do
@@ -25,12 +54,10 @@ minetest.register_globalstep(function(dtime)
 	end
 
 	for pname, info in pairs(voters) do
-		if not info.choice and timer > 0 then
-			ctf_modebase.show_modechoose_form(pname)
-		else
+		if info.choice then
 			votes[info.choice] = (votes[info.choice] or 0) + 1
 
-			if votes[info.choice] > votes._most.c then
+			if votes[info.choice] >= votes._most.c then
 				votes._most.c = votes[info.choice]
 				votes._most.n = info.choice
 			end
@@ -47,17 +74,20 @@ minetest.register_globalstep(function(dtime)
 		votes._most.c or 0
 	))
 
-	ctf_modebase.start_new_match(nil, new_mode)
-end)
+	start_new_mode(new_mode)
+end
 
 minetest.register_on_joinplayer(function(player)
 	local name = player:get_player_name()
 
 	if voting then
-		voters[name] = {choice = false, formname = ctf_modebase.show_modechoose_form(player)}
+		voters[minetest.get_player_information(name).address] = {
+			choice = false,
+			formname = ctf_modebase.show_modechoose_form(player)
+		}
 	end
 
-	if ctf_modebase.current_mode then
+	if ctf_modebase.current_mode and ctf_map.current_map then
 		local map = ctf_map.current_map
 		local mode_def = ctf_modebase:get_current_mode()
 		skybox.set(player, table.indexof(ctf_map.skyboxes, map.skybox)-1)
@@ -79,81 +109,96 @@ end)
 
 minetest.register_on_leaveplayer(function(player)
 	if voting then
-		voters[player:get_player_name()] = nil
+		voters[minetest.get_player_information(player:get_player_name()).address] = nil
+		voter_count = voter_count - 1
 	end
 end)
 
-function ctf_modebase.start_mode_vote()
+local function start_mode_vote()
 	voters = {}
 
 	for _, player in pairs(minetest.get_connected_players()) do
-		voters[player:get_player_name()] = {choice = false, formname = ctf_modebase.show_modechoose_form(player)}
+		voters[minetest.get_player_information(player:get_player_name()).address] = {
+			choice = false,
+			formname = ctf_modebase.show_modechoose_form(player)
+		}
 	end
 
-	timer = ctf_modebase.VOTING_TIME
+	timer = minetest.after(ctf_modebase.VOTING_TIME, function()
+		timer = nil
+		vote_finish()
+	end)
 	voting = true
+	voter_count = 0
 end
 
-
-function ctf_modebase.start_new_match(show_form, new_mode, specific_map)
-	local old_map = ctf_map.current_map
-	local old_mode = ctf_modebase.current_mode
-
-	local function start_new_match()
-		for _, pos in pairs(ctf_teams.team_chests) do
-			minetest.remove_node(pos)
-		end
-		ctf_teams.team_chests = {}
-
-		if new_mode and new_mode ~= old_mode then
-			maps_placed = {}
-		end
-
-		if new_mode then
-			ctf_modebase.current_mode = new_mode
-			RunCallbacks(ctf_modebase.registered_on_new_mode, new_mode, old_mode)
-		end
-
-		ctf_modebase.place_map(new_mode or ctf_modebase.current_mode, specific_map, function(map)
-			give_initial_stuff.reset_stuff_providers()
-
-			give_initial_stuff.register_stuff_provider(function()
-				return map.initial_stuff or {}
-			end)
-
-			RunCallbacks(ctf_modebase.registered_on_new_match, map, old_map)
-
-			ctf_teams.allocate_teams(map.teams)
-
-			ctf_modebase.current_mode_matches = ctf_modebase.current_mode_matches + 1
-		end)
+function ctf_modebase.start_new_match()
+	local path = minetest.get_worldpath() .. "/queue_restart.txt"
+	if ctf_core.file_exists(path) then
+		assert(os.remove(path))
+		restart_on_next_match = true
 	end
 
-	-- Show mode selection form every 'ctf_modebase.MAPS_PER_MODE'-th match
-	if ctf_modebase.current_mode_matches >= ctf_modebase.MAPS_PER_MODE or show_form then
+	if restart_on_next_match then
+		minetest.request_shutdown("Restarting server at imperator request.", true)
+		return
+	end
+
+	if ctf_modebase.current_mode then
+		ctf_modebase:get_current_mode().on_match_end()
+	end
+
+	if mode_on_next_match then
 		ctf_modebase.current_mode_matches = 0
 
-		ctf_modebase.start_mode_vote()
+		start_new_mode(mode_on_next_match)
+	-- Show mode selection form every 'ctf_modebase.MAPS_PER_MODE'-th match
+	elseif ctf_modebase.current_mode_matches >= ctf_modebase.MAPS_PER_MODE or not ctf_modebase.current_mode then
+		ctf_modebase.current_mode_matches = 0
+
+		start_mode_vote()
 	else
-		start_new_match()
+		start_new_mode(ctf_modebase.current_mode)
 	end
 end
 
 function ctf_modebase.show_modechoose_form(player)
+	local modenames = {}
+
+	for modename in pairs(ctf_modebase.modes) do
+		table.insert(modenames, modename)
+	end
+	table.sort(modenames)
+
 	local elements = {}
 	local idx = 0
-
-	for modename, def in pairs(ctf_modebase.modes) do
+	for _, modename in ipairs(modenames) do
 		elements[modename] = {
 			type = "button",
 			label = HumanReadable(modename),
 			exit = true,
-			pos = {"center", idx},
+			pos = {"center", idx + 0.5},
 			func = function(playername, fields, field_name)
 				if voting then
 					if ctf_modebase.modes[modename] then
-						voters[playername].choice = modename
+						local voter = voters[minetest.get_player_information(playername).address]
+
+						if not voter.choice then
+							voter_count = voter_count + 1
+						end
+
+						voter.choice = modename
+
 						minetest.chat_send_all(string.format("%s voted for the mode '%s'", playername, HumanReadable(modename)))
+
+						if voter_count >= table.count(voters) then
+							if timer then
+								timer:cancel()
+								timer = nil
+							end
+
+							vote_finish()
+						end
 					else
 						ctf_modebase.show_modechoose_form(player)
 					end
@@ -165,12 +210,15 @@ function ctf_modebase.show_modechoose_form(player)
 	end
 
 	ctf_gui.show_formspec(player, "ctf_modebase:mode_select", {
+		size = {x = 8, y = 8},
 		title = "Mode Selection",
 		description = "Please vote on what gamemode you would like to play",
 		on_quit = function(pname)
 			if voting then
+				local address = minetest.get_player_information(pname).address
+
 				minetest.after(0.1, function()
-					if voting and voters[pname] and not voters[pname].choice then
+					if voting and voters[address] and not voters[address].choice then
 						ctf_modebase.show_modechoose_form(pname)
 					end
 				end)
@@ -182,37 +230,27 @@ function ctf_modebase.show_modechoose_form(player)
 	return "ctf_modebase:mode_select"
 end
 
---- @param mode_def table | string
-function ctf_modebase.place_map(mode_def, mapidx, callback)
-	-- Convert name of mode into it's def
-	if type(mode_def) == "string" then
-		mode_def = ctf_modebase.modes[mode_def]
-	end
-
-	local dirlist = minetest.get_dir_list(ctf_map.maps_dir, true)
-
+--- @param mode string
+--- @param mapidx integer
+function ctf_modebase.place_map(mode, mapidx, callback)
 	if not mapidx then
-		local map_pool = mode_def.map_whitelist or dirlist
-		local new_pool = {}
+		if not map_pools[mode] or #map_pools[mode] == 0 then
+			map_pools[mode] = {}
 
-		if #maps_placed >= #map_pool then
-			maps_placed = {}
-		end
-
-		for _, name in pairs(map_pool) do
-			if table.indexof(maps_placed, name) == -1 then
-				table.insert(new_pool, name)
+			for idx, map in ipairs(ctf_modebase.map_catalog.maps) do
+				if not map.game_modes or table.indexof(map.game_modes, mode) ~= -1 then
+					table.insert(map_pools[mode], idx)
+				end
 			end
 		end
 
-		mapidx = table.indexof(dirlist, new_pool[math.random(1, #new_pool)])
-	elseif type(mapidx) ~= "number" then
-		mapidx = table.indexof(dirlist, mapidx)
+		local idx = math.random(1, #map_pools[mode])
+		mapidx = table.remove(map_pools[mode], idx)
 	end
 
-	ctf_map.place_map(mapidx, dirlist[mapidx], function(map)
-		table.insert(maps_placed, dirlist[mapidx])
-
+	ctf_modebase.map_catalog.current_map = mapidx
+	local map = ctf_modebase.map_catalog.maps[mapidx]
+	ctf_map.place_map(map, function()
 		-- Set time, time_speed, skyboxes, and physics
 
 		minetest.set_timeofday(map.start_time/24000)
@@ -227,6 +265,9 @@ function ctf_modebase.place_map(mode_def, mapidx, callback)
 				jump = map.phys_jump,
 				gravity = map.phys_gravity,
 			})
+
+			-- Convert name of mode into it's def
+			local mode_def = ctf_modebase.modes[mode]
 
 			if mode_def.physics then
 				player:set_physics_override({
@@ -243,3 +284,74 @@ function ctf_modebase.place_map(mode_def, mapidx, callback)
 		callback(map)
 	end)
 end
+
+local function set_next(param)
+	local map = nil
+	local map_name, mode = ctf_modebase.match_mode(param)
+
+	if mode then
+		if not ctf_modebase.modes[mode] then
+			return "No such game mode: " .. mode
+		end
+	end
+
+	if map_name then
+		map = ctf_modebase.map_catalog.map_dirnames[map_name]
+		if not map then
+			return "No such map: " .. map_name
+		end
+	end
+
+	mode_on_next_match = mode
+	map_on_next_match = map
+end
+
+minetest.register_chatcommand("ctf_next", {
+	description = "Set a new map and mode after the match ends",
+	privs = {ctf_admin = true},
+	params = "<mode:technical modename> <technical mapname>",
+	func = function(name, param)
+		minetest.log("action", name .. " ran /ctf_next " .. param)
+
+		local error = set_next(param)
+		if error then
+			return false, error
+		end
+	end,
+})
+
+minetest.register_chatcommand("ctf_skip", {
+	description = "Skip to a new match now",
+	privs = {ctf_admin = true},
+	params = "<mode:technical modename> <technical mapname>",
+	func = function(name, param)
+		minetest.log("action", name .. " ran /ctf_next_now " .. param)
+
+		local error = set_next(param)
+		if error then
+			return false, error
+		end
+
+		ctf_modebase.start_new_match()
+	end,
+})
+
+minetest.register_chatcommand("queue_restart", {
+		description = "Queue server restart",
+		privs = {server = true},
+		func = function(name)
+				restart_on_next_match = true
+				minetest.log("action", name .. " queued a restart")
+				return true, "Restart queued."
+		end
+})
+
+minetest.register_chatcommand("unqueue_restart", {
+		description = "Unqueue server restart",
+		privs = {server = true},
+		func = function(name)
+				restart_on_next_match = false
+				minetest.log("action", name .. " un-queued a restart")
+				return true, "Restart cancelled."
+		end
+})

@@ -11,7 +11,7 @@ local function update_hud(player, time)
 		return ctf_combat_mode.remove(player)
 	end
 
-	local hud_message = "You are in combat [%ds]"
+	local hud_message = "You are in combat [%ds left]"
 
 	if hud:exists(player, "combat_indicator") then
 		hud:change(player, "combat_indicator", {
@@ -29,8 +29,15 @@ local function update_hud(player, time)
 	end
 
 	minetest.after(1, function()
-		if in_combat[player] then
-			in_combat[player].time = in_combat[player].time - 1
+		local playerobj = minetest.get_player_by_name(player)
+
+		if playerobj and in_combat[player] then
+			if minetest.registered_nodes[minetest.get_node(playerobj:get_pos()).name].walkable == false then
+				in_combat[player].time = in_combat[player].time - 1
+			else
+				in_combat[player].time = in_combat[player].time + 0.5
+			end
+
 			update_hud(player, in_combat[player].time)
 		end
 	end)
