@@ -13,7 +13,6 @@ function ctf_teams.remove_online_player(player)
 			ctf_teams.online_players[team].count = ctf_teams.online_players[team].count - 1
 		end
 	end
-	ctf_teams.player_team[player] = nil
 end
 
 ---@param player string | ObjectRef
@@ -23,7 +22,6 @@ function ctf_teams.set(player, teamname)
 
 	if not teamname then
 		ctf_teams.player_team[player] = nil
-		ctf_teams.remembered_player[player] = nil
 		return
 	end
 
@@ -36,7 +34,6 @@ function ctf_teams.set(player, teamname)
 	ctf_teams.remove_online_player(player)
 
 	ctf_teams.player_team[player] = teamname
-	ctf_teams.remembered_player[player] = teamname
 	ctf_teams.online_players[teamname].players[player] = true
 	ctf_teams.online_players[teamname].count = ctf_teams.online_players[teamname].count + 1
 
@@ -56,23 +53,36 @@ end
 --
 
 local tpos = 1
-function ctf_teams.default_allocate_player(player)
+function ctf_teams.default_team_allocator(player)
 	if #ctf_teams.current_team_list <= 0 then return end -- No teams initialized yet
 	player = PlayerName(player)
 
-	if not ctf_teams.remembered_player[player] then
-		ctf_teams.set(player, ctf_teams.current_team_list[tpos])
-
-		if tpos >= #ctf_teams.current_team_list then
-			tpos = 1
-		else
-			tpos = tpos + 1
-		end
-	else
-		ctf_teams.set(player, ctf_teams.remembered_player[player])
+	if ctf_teams.player_team[player] then
+		return ctf_teams.player_team[player]
 	end
+
+	local team = ctf_teams.current_team_list[tpos]
+
+	if tpos >= #ctf_teams.current_team_list then
+		tpos = 1
+	else
+		tpos = tpos + 1
+	end
+
+	return team
 end
-ctf_teams.allocate_player = ctf_teams.default_allocate_player
+ctf_teams.team_allocator = ctf_teams.default_team_allocator
+
+function ctf_teams.allocate_player(player, on_join)
+	player = PlayerName(player)
+	local team = ctf_teams.team_allocator(player)
+
+	if on_join then
+		ctf_teams.player_team[player] = nil
+	end
+
+	ctf_teams.set(player, team)
+end
 
 ---@param teams table
 -- Should be called at match start
@@ -80,7 +90,6 @@ function ctf_teams.allocate_teams(teams)
 	ctf_teams.player_team = {}
 	ctf_teams.online_players = {}
 	ctf_teams.current_team_list = {}
-	ctf_teams.remembered_player = {}
 	tpos = 1
 
 	for teamname, def in pairs(teams) do

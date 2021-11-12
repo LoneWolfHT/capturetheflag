@@ -96,7 +96,7 @@ ctf_modebase.register_mode("classes", {
 	on_match_end = function()
 		teams.on_match_end()
 	end,
-	allocate_player = teams.allocate_player,
+	team_allocator = teams.team_allocator,
 	on_allocplayer = function(player, teamname)
 		classes.set(player)
 

@@ -31,7 +31,6 @@ ctf_teams = {
 	player_team = {},
 	online_players = {},
 	current_team_list = {},
-	remembered_player = {}, -- Holds players that have been set to a team previously. Format: ["player_name"] = teamname
 
 	team_chests = {}, -- Whenever a team chest is initialized it'll be put in this table
 }
@@ -65,7 +64,7 @@ minetest.send_join_message = empty_func
 minetest.send_leave_message = empty_func
 
 minetest.register_on_joinplayer(function(player, ...)
-	ctf_teams.allocate_player(player)
+	ctf_teams.allocate_player(player, true)
 
 	local pteam = ctf_teams.get(player)
 

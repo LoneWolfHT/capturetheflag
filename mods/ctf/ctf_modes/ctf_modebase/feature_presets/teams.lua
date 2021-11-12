@@ -33,7 +33,7 @@ end
 local function celebrate_team(teamname)
 	for _, player in ipairs(minetest.get_connected_players()) do
 		local pname = player:get_player_name()
-		local pteam = ctf_teams.player_team[pname].name
+		local pteam = ctf_teams.get(pname)
 
 		if pteam == teamname then
 			minetest.sound_play("ctf_modebase_trumpet_positive", {
@@ -134,7 +134,7 @@ return {
 		ctf_modebase.summary.on_match_end()
 		recent_rankings.on_match_end()
 	end,
-	allocate_player = function(player)
+	team_allocator = function(player)
 		player = PlayerName(player)
 
 		local team_scores = recent_rankings.teams()
@@ -173,13 +173,13 @@ return {
 		local players_diff = best_players.s - worst_players.s
 
 		-- Allocate player to remembered team unless they're desperately needed in the other
-		local remembered_team = ctf_teams.remembered_player[player]
+		local remembered_team = ctf_teams.get(player)
 		if remembered_team and not ctf_modebase.flag_captured[remembered_team] and score_diff <= 0.4 and players_diff < 2 then
-			ctf_teams.set(player, remembered_team)
+			return remembered_team
 		elseif players_diff == 0 or score_diff > 0.2 and players_diff < 2 then
-			ctf_teams.set(player, worst_score.t)
+			return worst_score.t
 		else
-			ctf_teams.set(player, worst_players.t)
+			return worst_players.t
 		end
 	end,
 	can_take_flag = function(player, teamname)
@@ -190,8 +190,7 @@ return {
 		end
 	end,
 	on_flag_take = function(player, teamname)
-		local pteam = ctf_teams.get(player)
-		local tcolor = pteam and ctf_teams.team[pteam].color or "#FFF"
+		local tcolor = ctf_teams.team[ctf_teams.get(player)].color
 		ctf_playertag.set(minetest.get_player_by_name(player), ctf_playertag.TYPE_BUILTIN, tcolor)
 
 		minetest.chat_send_all(
@@ -206,7 +205,7 @@ return {
 		flag_huds.track_capturer(player, FLAG_CAPTURE_TIMER)
 	end,
 	on_flag_drop = function(player, teamnames)
-		local tcolor = ctf_teams.team[ctf_teams.get(player)].color or "#FFF"
+		local tcolor = ctf_teams.team[ctf_teams.get(player)].color
 
 		minetest.chat_send_all(
 			minetest.colorize(tcolor, player) ..
@@ -218,7 +217,7 @@ return {
 	end,
 	on_flag_capture = function(player, teamnames)
 		local pteam = ctf_teams.get(player)
-		local tcolor = ctf_teams.team[pteam].color or "#FFF"
+		local tcolor = ctf_teams.team[pteam].color
 
 		ctf_playertag.set(minetest.get_player_by_name(player), ctf_playertag.TYPE_ENTITY)
 		celebrate_team(pteam)

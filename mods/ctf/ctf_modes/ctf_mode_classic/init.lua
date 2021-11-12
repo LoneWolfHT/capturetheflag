@@ -77,7 +77,7 @@ ctf_modebase.register_mode("classic", {
 	on_match_end = function()
 		teams.on_match_end()
 	end,
-	allocate_player = teams.allocate_player,
+	team_allocator = teams.team_allocator,
 	on_allocplayer = function(player, teamname)
 		local tcolor = ctf_teams.team[teamname].color
 
