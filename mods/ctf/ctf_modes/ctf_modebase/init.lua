@@ -57,7 +57,8 @@ ctf_core.include_files(
 	"markers.lua",
 	"bounties.lua",
 	"build_timer.lua",
-	"update_wear.lua"
+	"update_wear.lua",
+	"huds.lua"
 )
 
 ctf_modebase.feature_presets.recent_rankings = ctf_core.include_files("feature_presets/recent_rankings.lua")
