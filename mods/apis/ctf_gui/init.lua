@@ -58,7 +58,7 @@ function ctf_gui.show_formspec(player, formname, formdef)
 				"hypertext[0,0.2;"..formdef.size.x..
 					",1.6;title;<center><big>"..formdef.title.."</big>\n" ..
 					(formdef.description or "\b") .."</center>]" ..
-				"scroll_container[0.1,1;"..formdef.size.x..
+				"scroll_container[0.1,1.5;"..formdef.size.x..
 				","..formdef.size.y..";formcontent;vertical]"
 
 	local using_scrollbar = false
