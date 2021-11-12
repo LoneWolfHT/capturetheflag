@@ -74,9 +74,9 @@ ctf_teams.allocate_player = ctf_teams.default_allocate_player
 ---@param teams table
 -- Should be called at match start
 function ctf_teams.allocate_teams(teams)
+	ctf_teams.player_team = {}
 	ctf_teams.online_players = {}
 	ctf_teams.current_team_list = {}
-	ctf_teams.player_team = {}
 	tpos = 1
 
 	for teamname, def in pairs(teams) do

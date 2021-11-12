@@ -27,6 +27,7 @@ ctf_teams = {
 		},
 	},
 	teamlist = {},
+
 	player_team = {},
 	online_players = {},
 	current_team_list = {},
