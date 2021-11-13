@@ -51,6 +51,7 @@ minetest.register_node("ctf_modebase:flag", {
 	paramtype = "light",
 	paramtype2 = "facedir",
 	walkable = false,
+	light_source = 5,
 	tiles = {
 		"default_wood.png",
 		"default_wood.png",
@@ -99,6 +100,7 @@ for name, def in pairs(ctf_teams.team) do
 		paramtype2 = "facedir",
 		walkable = false,
 		buildable_to = false,
+		light_source = 5,
 		tiles = {
 			"default_wood.png",
 			"default_wood.png",
@@ -138,6 +140,7 @@ minetest.register_node("ctf_modebase:flag_captured_top",{
 	paramtype = "light",
 	paramtype2 = "facedir",
 	walkable = false,
+	light_source = 2,
 	tiles = {
 		"default_wood.png",
 		"default_wood.png",

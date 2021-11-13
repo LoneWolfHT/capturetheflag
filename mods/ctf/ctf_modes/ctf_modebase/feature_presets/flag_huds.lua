@@ -82,18 +82,18 @@ end
 local player_timers = nil
 
 local function update_player(player)
-	local status = get_flag_status(player:get_player_name())
+	local flag_status = get_flag_status(player:get_player_name())
 
 	if hud:exists(player, "flag_status") then
-		hud:change(player, "flag_status", get_flag_status(player:get_player_name()))
+		hud:change(player, "flag_status", flag_status)
 	else
 		hud:add(player, "flag_status", {
 			hud_elem_type = "text",
 			position = {x = 1, y = 0},
 			offset = {x = -6, y = 6},
 			alignment = {x = "left", y = "down"},
-			text = status.text,
-			color = status.color,
+			text = flag_status.text,
+			color = flag_status.color,
 		})
 	end
 

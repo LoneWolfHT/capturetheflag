@@ -32,15 +32,15 @@ add_mode_func(ctf_modebase.register_on_new_mode, "on_mode_start", true)
 
 add_mode_func(ctf_healing.register_on_heal, "on_healplayer")
 
-ctf_teams.allocate_player = function(...)
+ctf_teams.team_allocator = function(...)
 	local current_mode = ctf_modebase:get_current_mode()
 
 	if not current_mode or #ctf_teams.current_team_list <= 0 then return end
 
-	if current_mode.allocate_player then
-		return current_mode.allocate_player(...)
+	if current_mode.team_allocator then
+		return current_mode.team_allocator(...)
 	else
-		return ctf_teams.default_allocate_player
+		return ctf_teams.default_team_allocator(...)
 	end
 end
 

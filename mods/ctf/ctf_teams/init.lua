@@ -27,6 +27,7 @@ ctf_teams = {
 		},
 	},
 	teamlist = {},
+
 	player_team = {},
 	online_players = {},
 	current_team_list = {},
@@ -63,7 +64,7 @@ minetest.send_join_message = empty_func
 minetest.send_leave_message = empty_func
 
 minetest.register_on_joinplayer(function(player, ...)
-	ctf_teams.allocate_player(player)
+	ctf_teams.allocate_player(player, true)
 
 	local pteam = ctf_teams.get(player)
 

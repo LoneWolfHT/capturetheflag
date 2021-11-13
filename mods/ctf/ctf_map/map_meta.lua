@@ -90,8 +90,8 @@ function ctf_map.load_map_meta(idx, dirname)
 			from, to = vector.sort(from, to)
 
 			map.chests[i] = {
-				pos1   = vector.add(from, offset_to_new),
-				pos2   = vector.add(to,   offset_to_new),
+				pos1   = vector.add(offset, vector.add(from, offset_to_new)),
+				pos2   = vector.add(offset, vector.add(to,   offset_to_new)),
 				amount = tonumber(meta:get("chests." .. i .. ".n") or "20"),
 			}
 

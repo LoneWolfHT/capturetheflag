@@ -21,14 +21,20 @@ ctf_modebase.register_mode("nade_fight", {
 		["default:shovel_mese"] = {rarity = 0.4, max_stacks = 2},
 		["default:axe_mese"   ] = {rarity = 0.4, max_stacks = 2},
 
-		["default:pick_diamond"  ] = {rarity = 0.01, max_stacks = 3},
-		["default:shovel_diamond"] = {rarity = 0.01, max_stacks = 2},
-		["default:axe_diamond"   ] = {rarity = 0.01, max_stacks = 2},
+		["default:pick_diamond"  ] = {rarity = 0.05, max_stacks = 3},
+		["default:shovel_diamond"] = {rarity = 0.05, max_stacks = 2},
+		["default:axe_diamond"   ] = {rarity = 0.05, max_stacks = 2},
 
 		["ctf_melee:sword_mese"   ] = {rarity = 0.4 , max_stacks = 1},
-		["ctf_melee:sword_diamond"] = {rarity = 0.01, max_stacks = 1},
+		["ctf_melee:sword_diamond"] = {rarity = 0.05, max_stacks = 1},
 
-		["default:apple"] = {min_count = 5, max_count = 20, rarity = 0.1, max_stacks = 2},
+		["ctf_ranged:pistol_loaded" ] = {rarity = 0.2 , max_stacks = 2},
+		["ctf_ranged:rifle_loaded"  ] = {rarity = 0.2                 },
+		["ctf_ranged:shotgun_loaded"] = {rarity = 0.05                },
+		["ctf_ranged:smg_loaded"    ] = {rarity = 0.05                },
+
+		["ctf_ranged:ammo"     ] = {min_count = 3, max_count = 10, rarity = 0.3 , max_stacks = 2},
+		["default:apple"       ] = {min_count = 5, max_count = 20, rarity = 0.1 , max_stacks = 2},
 
 		["grenades:smoke"] = {rarity = 0.2, max_stacks = 2},
 	},
@@ -75,7 +81,7 @@ ctf_modebase.register_mode("nade_fight", {
 	on_match_end = function()
 		teams.on_match_end()
 	end,
-	allocate_player = teams.allocate_player,
+	team_allocator = teams.team_allocator,
 	on_allocplayer = function(player, teamname)
 		local tcolor = ctf_teams.team[teamname].color
 
