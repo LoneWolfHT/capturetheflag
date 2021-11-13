@@ -145,7 +145,7 @@ local function show_catalog(pname, current_map)
 			end,
 		}
 	end
-	
+
 	if minetest.get_player_privs(pname).ctf_admin then
 		formspec.elements.skip_to_map = {
 			type = "button",
