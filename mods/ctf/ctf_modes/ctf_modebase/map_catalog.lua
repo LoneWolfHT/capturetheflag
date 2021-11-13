@@ -152,7 +152,7 @@ local function show_catalog(pname, current_map)
 			label = "Skip to map",
 			pos = {9, ctf_gui.FORM_SIZE.y - ctf_gui.ELEM_SIZE.y - 2.5},
 			func = function()
-				ctf_modebase.map_on_next_match = ctf_modebase.map_catalog.map_dirnames[current_map]
+				ctf_modebase.map_on_next_match = current_map
 				ctf_modebase.start_new_match()
 			end
 		}
@@ -164,7 +164,7 @@ local function show_catalog(pname, current_map)
 			label = "Set as next map",
 			pos = {13, ctf_gui.FORM_SIZE.y - ctf_gui.ELEM_SIZE.y - 2.5},
 			func = function()
-				ctf_modebase.map_on_next_match = ctf_modebase.map_catalog.map_dirnames[current_map]
+				ctf_modebase.map_on_next_match = current_map
 			end
 		}
 	end
