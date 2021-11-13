@@ -77,11 +77,12 @@ minetest.register_chatcommand("reset_rankings", {
 				return false, "The ctf_admin priv is required to reset the rankings of other players!"
 			end
 		else
-			if not allow_reset[name] then
-				allow_reset[name] = true
+			local key = string.format("%s:%s", mode_name, name)
+			if not allow_reset[key] then
+				allow_reset[key] = true
 
 				minetest.after(30, function()
-					allow_reset[name] = nil
+					allow_reset[key] = nil
 				end)
 
 				return true, "This will reset your stats and rankings for " .. mode_name .." mode completely."
@@ -90,7 +91,7 @@ minetest.register_chatcommand("reset_rankings", {
 					.. " sure, re-type /reset_rankings within 30 seconds to reset."
 			end
 			mode_data.rankings:set(name, {}, true)
-			allow_reset[name] = nil
+			allow_reset[key] = nil
 
 			return true, "Your rankings have been reset"
 		end
