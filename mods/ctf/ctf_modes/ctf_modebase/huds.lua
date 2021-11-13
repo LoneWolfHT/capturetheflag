@@ -49,7 +49,7 @@ minetest.register_on_joinplayer(function(player)
 		text = map_duration_HUD_len,
 		text_scale = 1.7,
 		color = 0xF00000,
-	})  
+	})
 end)
 
 --Updating huds
