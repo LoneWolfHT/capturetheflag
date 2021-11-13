@@ -6,7 +6,7 @@ local timer = 0
 local map_pools = {}
 
 local restart_on_next_match = false
-local map_on_next_match = nil
+ctf_modebase.map_on_next_match = nil
 local mode_on_next_match = nil
 
 local function start_new_mode(new_mode)
@@ -26,7 +26,7 @@ local function start_new_mode(new_mode)
 		RunCallbacks(ctf_modebase.registered_on_new_mode, new_mode, old_mode)
 	end
 
-	ctf_modebase.place_map(new_mode, map_on_next_match, function(map)
+	ctf_modebase.place_map(new_mode, ctf_modebase.map_on_next_match, function(map)
 		give_initial_stuff.reset_stuff_providers()
 
 		RunCallbacks(ctf_modebase.registered_on_new_match, map, old_map)
@@ -42,7 +42,7 @@ local function start_new_mode(new_mode)
 		ctf_modebase.current_mode_matches = ctf_modebase.current_mode_matches + 1
 	end)
 
-	map_on_next_match = nil
+	ctf_modebase.map_on_next_match = nil
 	mode_on_next_match = nil
 end
 
@@ -303,7 +303,7 @@ function ctf_modebase.set_next(param)
 	end
 
 	mode_on_next_match = mode
-	map_on_next_match = map
+	ctf_modebase.map_on_next_match = map
 end
 
 minetest.register_chatcommand("ctf_next", {
