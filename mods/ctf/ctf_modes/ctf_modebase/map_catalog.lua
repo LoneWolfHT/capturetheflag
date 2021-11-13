@@ -146,25 +146,25 @@ local function show_catalog(pname, current_map)
 		}
 	end
 
-	if minetest.get_player_privs(pname).ctf_admin then
+	if minetest.check_player_privs(pname, {ctf_admin=true}) then
 		formspec.elements.skip_to_map = {
 			type = "button",
 			label = "Skip to map",
 			pos = {9, ctf_gui.FORM_SIZE.y - ctf_gui.ELEM_SIZE.y - 2.5},
 			func = function()
-				ctf_modebase.set_next(current_map_meta.dirname)
+				ctf_modebase.map_on_next_match = ctf_modebase.map_catalog.map_dirnames[current_map]
 				ctf_modebase.start_new_match()
 			end
 		}
 	end
 
-	if minetest.get_player_privs(pname).ctf_admin then
+	if minetest.check_player_privs(pname, {ctf_admin=true}) then
 		formspec.elements.set_as_next_map = {
 			type = "button",
 			label = "Set as next map",
 			pos = {13, ctf_gui.FORM_SIZE.y - ctf_gui.ELEM_SIZE.y - 2.5},
 			func = function()
-				ctf_modebase.set_next(current_map_meta.dirname)
+				ctf_modebase.map_on_next_match = ctf_modebase.map_catalog.map_dirnames[current_map]
 			end
 		}
 	end
