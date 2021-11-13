@@ -46,7 +46,7 @@ minetest.register_on_joinplayer(function(player)
 		position = {x = 1, y = 0.26},
 		alignment = {x = "left", y = "up"},
 		offset = {x = 1, y = 0.26},
-		text = map_duration_HUD_len,
+		text = map_duration_HUD,
 		text_scale = 1.7,
 		color = 0xF00000,
 	})
