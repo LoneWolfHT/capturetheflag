@@ -285,7 +285,7 @@ function ctf_modebase.place_map(mode, mapidx, callback)
 	end)
 end
 
-function ctf_modebase.set_next(param)
+local function set_next(param)
 	local map = nil
 	local map_name, mode = ctf_modebase.match_mode(param)
 
@@ -313,7 +313,7 @@ minetest.register_chatcommand("ctf_next", {
 	func = function(name, param)
 		minetest.log("action", name .. " ran /ctf_next " .. param)
 
-		local error = ctf_modebase.set_next(param)
+		local error = set_next(param)
 		if error then
 			return false, error
 		end
@@ -327,7 +327,7 @@ minetest.register_chatcommand("ctf_skip", {
 	func = function(name, param)
 		minetest.log("action", name .. " ran /ctf_next_now " .. param)
 
-		local error = ctf_modebase.set_next(param)
+		local error = set_next(param)
 		if error then
 			return false, error
 		end
