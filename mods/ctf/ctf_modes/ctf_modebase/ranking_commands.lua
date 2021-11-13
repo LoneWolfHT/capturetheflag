@@ -58,6 +58,7 @@ ctf_core.register_chatcommand_alias("rank", "r", {
 	end
 })
 
+local allow_reset = {}
 minetest.register_chatcommand("reset_rankings", {
 	description = minetest.colorize("red", "Resets rankings of you or another player to nothing"),
 	params = "<mode:technical modename> <playername>",
@@ -76,7 +77,20 @@ minetest.register_chatcommand("reset_rankings", {
 				return false, "The ctf_admin priv is required to reset the rankings of other players!"
 			end
 		else
+			if not allow_reset[name] then
+				allow_reset[name] = true
+
+				minetest.after(30, function()
+					allow_reset[name] = nil
+				end)
+
+				return true, "This will reset your stats and rankings for " .. mode_name .." mode completely."
+					.. " You will lose access to any special privileges such as the"
+					.. " team chest or userlimit skip. This is irreversable. If you're"
+					.. " sure, re-type /reset_rankings within 30 seconds to reset."
+			end
 			mode_data.rankings:set(name, {}, true)
+			allow_reset[name] = nil
 
 			return true, "Your rankings have been reset"
 		end
