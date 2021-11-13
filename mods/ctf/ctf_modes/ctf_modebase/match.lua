@@ -285,7 +285,7 @@ function ctf_modebase.place_map(mode, mapidx, callback)
 	end)
 end
 
-local function ctf_modebase.set_next(param)
+function ctf_modebase.set_next(param)
 	local map = nil
 	local map_name, mode = ctf_modebase.match_mode(param)
 
