@@ -229,9 +229,6 @@ minetest.register_chatcommand("make_pro", {
 		end
 
 		local old_ranks = mode_data.rankings:get(pname)
-		if not old_ranks then
-			return false, string.format("Player '%s' has no rankings!", pname)
-		end
 
 		mode_data.rankings:add(pname, {score = 8000, kills = 7, deaths = 5, flag_captures = 5})
 
@@ -263,10 +260,7 @@ minetest.register_chatcommand("add_score", {
 			return false, "You should provide score amount!"
 		end
 
-		local old_ranks = mode_data.rankings:get(pname)
-		if not old_ranks then
-			return false, string.format("Player '%s' has no rankings!", pname)
-		end
+		local old_ranks = mode_data.rankings:get(pname) or {}
 
 		local old_score = old_ranks.score or 0
 		mode_data.rankings:set(pname, {score = old_score + score})
@@ -294,28 +288,13 @@ minetest.register_chatcommand("transfer_rankings", {
 
 		local src_rankings = {}
 		local dst_rankings = {}
-		local src_exists = false
-		local dst_exists = false
 
 		for mode_name, mode in pairs(ctf_modebase.modes) do
 			local src_rank = mode.rankings:get(src)
 			src_rankings[mode_name] = src_rank or {}
-			if src_rank then
-				src_exists = true
-			end
 
 			local dst_rank = mode.rankings:get(dst)
 			dst_rankings[mode_name] = dst_rank or {}
-			if dst_rank then
-				dst_exists = true
-			end
-		end
-
-		if not src_exists then
-			return false, string.format("Source player '%s' has no rankings!", src)
-		end
-		if not dst_exists then
-			return false, string.format("Destination player '%s' has no rankings!", dst)
 		end
 
 		if src == dst then
@@ -323,7 +302,7 @@ minetest.register_chatcommand("transfer_rankings", {
 		end
 
 		for mode_name, mode in pairs(ctf_modebase.modes) do
-			mode.rankings:add(dst, src_rankings[mode_name])
+			mode.rankings:set(dst, src_rankings[mode_name])
 		end
 
 		for _, mode in pairs(ctf_modebase.modes) do
