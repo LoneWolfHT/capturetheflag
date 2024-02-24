@@ -1,31 +1,41 @@
+function ctf_modebase.restore_flag(flagteam, taker)
+	ctf_modebase.flag_taken[flagteam] = nil
+
+	if ctf_modebase.taken_flags[taker] then
+		table.remove(ctf_modebase.taken_flags[taker], table.indexof(ctf_modebase.taken_flags[taker], flagteam))
+
+		if #ctf_modebase.taken_flags[taker] <= 0 then
+			ctf_modebase.taken_flags[taker] = nil
+
+			if player_api.players[taker] then
+				player_api.set_texture(minetest.get_player_by_name(taker), 2, "blank.png")
+			end
+		end
+	end
+
+	local fpos = vector.offset(ctf_map.current_map.teams[flagteam].flag_pos, 0, 1, 0)
+
+	minetest.load_area(fpos)
+	local node = minetest.get_node(fpos)
+
+	if node.name == "ctf_modebase:flag_captured_top" then
+		node.name = "ctf_modebase:flag_top_" .. flagteam
+		minetest.set_node(fpos, node)
+	else
+		minetest.log("error", string.format("[ctf_flags] Unable to return flag node=%s, pos=%s",
+			node.name, vector.to_string(fpos))
+		)
+	end
+end
+
 local function drop_flags(player, pteam)
 	local pname = player:get_player_name()
 	local flagteams = ctf_modebase.taken_flags[pname]
 	if not flagteams then return end
 
-	for _, flagteam in ipairs(flagteams) do
-		ctf_modebase.flag_taken[flagteam] = nil
-
-		local fpos = vector.offset(ctf_map.current_map.teams[flagteam].flag_pos, 0, 1, 0)
-
-		minetest.load_area(fpos)
-		local node = minetest.get_node(fpos)
-
-		if node.name == "ctf_modebase:flag_captured_top" then
-			node.name = "ctf_modebase:flag_top_" .. flagteam
-			minetest.set_node(fpos, node)
-		else
-			minetest.log("error", string.format("[ctf_flags] Unable to return flag node=%s, pos=%s",
-				node.name, vector.to_string(fpos))
-			)
-		end
+	for _, flagteam in ipairs(table.copy(flagteams)) do
+		ctf_modebase.restore_flag(flagteam, pname)
 	end
-
-	if player_api.players[pname] then
-		player_api.set_texture(player, 2, "blank.png")
-	end
-
-	ctf_modebase.taken_flags[pname] = nil
 
 	ctf_modebase.skip_vote.on_flag_drop(#flagteams)
 	ctf_modebase:get_current_mode().on_flag_drop(player, flagteams, pteam)
@@ -109,7 +119,15 @@ function ctf_modebase.flag_on_punch(puncher, nodepos, node)
 			ctf_modebase.on_flag_capture(puncher, flagteams)
 
 			ctf_modebase.skip_vote.on_flag_capture(#flagteams)
-			ctf_modebase:get_current_mode().on_flag_capture(puncher, flagteams)
+			local not_finished = ctf_modebase:get_current_mode().on_flag_capture(puncher, flagteams)
+
+			for team in pairs(not_finished) do
+				ctf_modebase.flag_captured[team] = nil
+			end
+
+			for _, player in pairs(minetest.get_connected_players()) do
+				ctf_modebase.flag_huds.update_player(player)
+			end
 		end
 	end
 end

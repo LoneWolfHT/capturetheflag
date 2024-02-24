@@ -3,6 +3,7 @@ ctf_core = {
 		-- server_mode = minetest.settings:get("ctf_server_mode") or "play",
 		server_mode = minetest.settings:get_bool("creative_mode", false) and "mapedit" or "play",
 		low_ram_mode = minetest.settings:get("ctf_low_ram_mode") == "true" or false,
+		eliminate_team_flag_captures = tonumber(minetest.settings:get("ctf_eliminate_team_flag_captures")) or 1,
 	}
 }
 

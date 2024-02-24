@@ -99,6 +99,7 @@ ctf_modebase.register_mode("nade_fight", {
 	on_leaveplayer = features.on_leaveplayer,
 	on_dieplayer = features.on_dieplayer,
 	on_respawnplayer = features.on_respawnplayer,
+	base_flag_name = features.base_flag_name,
 	can_take_flag = features.can_take_flag,
 	on_flag_take = features.on_flag_take,
 	on_flag_drop = features.on_flag_drop,

@@ -108,7 +108,8 @@ function ctf_modebase.flag_huds.update_player(player)
 	for tname, def in pairs(ctf_map.current_map.teams) do
 		local hud_label = "flag_pos:" .. tname
 
-		local base_label = HumanReadable(tname) .. "'s flag"
+		local base_label = ctf_modebase:get_current_mode().base_flag_name(tname)
+
 		if ctf_modebase.flag_captured[tname] then
 			base_label = base_label .. " (captured)"
 		elseif ctf_modebase.flag_taken[tname] then

@@ -10,3 +10,6 @@ ctf_rankings_redis_server_port (Rankings Redis Server Port) int 6379
 # CTF can sometimes reduce CPU usage by calculating things once and putting them in RAM.
 # Turn on low ram mode if you're getting crashes related to RAM/Memory usage
 ctf_low_ram_mode (Low RAM mode) bool false
+
+# Once a team's flag has been captured x times the team's members will be allocated to a new team
+ctf_eliminate_team_flag_captures (Amount of flag captures to eliminate a team) int 1

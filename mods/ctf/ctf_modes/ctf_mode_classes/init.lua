@@ -135,6 +135,7 @@ ctf_modebase.register_mode("classes", {
 
 		classes.reset_class_cooldowns(player)
 	end,
+	base_flag_name = features.base_flag_name,
 	can_take_flag = features.can_take_flag,
 	on_flag_take = features.on_flag_take,
 	on_flag_drop = features.on_flag_drop,
